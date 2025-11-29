@@ -1,0 +1,669 @@
+// Builder AI Platform - Database Schema
+// Comprehensive schema for homebuilder AI tools
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+// ==========================================
+// CORE ENTITIES
+// ==========================================
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  name          String?
+  password      String?
+  role          String    @default("user") // admin, builder_admin, sales_agent, marketing, realtor
+  emailVerified DateTime?
+  image         String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  organization   Organization? @relation(fields: [organizationId], references: [id])
+  organizationId String?
+
+  accounts      Account[]
+  sessions      Session[]
+  conversations Conversation[]
+  salesSessions SalesTrainingSession[]
+  contentDrafts MarketingContent[]
+
+  @@index([organizationId])
+  @@index([email])
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@index([userId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+// ==========================================
+// ORGANIZATION (BUILDER COMPANY)
+// ==========================================
+
+model Organization {
+  id          String   @id @default(cuid())
+  name        String
+  slug        String   @unique
+  description String?
+  logo        String?
+  website     String?
+  phone       String?
+  email       String?
+  address     String?
+  city        String?
+  state       String?
+  zipCode     String?
+  brandVoice  String?  // Brand voice guidelines for AI content generation
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  users              User[]
+  communities        Community[]
+  floorplans         Floorplan[]
+  leads              Lead[]
+  competitors        Competitor[]
+  crmIntegrations    CRMIntegration[]
+  chatbotConfigs     ChatbotConfig[]
+  marketingContent   MarketingContent[]
+  faqSections        FAQSection[]
+  realtorPortal      RealtorPortalConfig?
+  aiSearchMonitor    AISearchMonitor[]
+  competitiveReports CompetitiveReport[]
+
+  @@index([slug])
+}
+
+// ==========================================
+// COMMUNITIES & FLOORPLANS
+// ==========================================
+
+model Community {
+  id              String   @id @default(cuid())
+  name            String
+  slug            String
+  description     String?
+  address         String?
+  city            String?
+  state           String?
+  zipCode         String?
+  latitude        Float?
+  longitude       Float?
+  status          String   @default("active") // active, coming_soon, sold_out
+  amenities       String?  // JSON array of amenities
+  schools         String?  // JSON array of nearby schools
+  hoa             String?  // HOA information
+  hoaFee          Float?
+  startingPrice   Float?
+  priceRange      String?
+  estimatedMoveIn String?
+  images          String?  // JSON array of image URLs
+  virtualTourUrl  String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  organizationId String
+
+  floorplans  Floorplan[]
+  inventory   InventoryHome[]
+  leads       Lead[]
+  faqs        FAQSection[]
+  incentives  Incentive[]
+
+  @@unique([organizationId, slug])
+  @@index([organizationId])
+  @@index([status])
+}
+
+model Floorplan {
+  id              String   @id @default(cuid())
+  name            String
+  slug            String
+  description     String?
+  bedrooms        Int
+  bathrooms       Float
+  halfBaths       Int      @default(0)
+  squareFeet      Int
+  stories         Int      @default(1)
+  garageSpaces    Int      @default(2)
+  basePrice       Float
+  features        String?  // JSON array of features
+  images          String?  // JSON array of image URLs
+  floorplanPdf    String?
+  virtualTourUrl  String?
+  elevations      String?  // JSON array of elevation options
+  structuralOptions String? // JSON array of structural options
+  status          String   @default("active")
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  organizationId String
+
+  community   Community? @relation(fields: [communityId], references: [id])
+  communityId String?
+
+  inventory InventoryHome[]
+  leads     Lead[]
+
+  @@unique([organizationId, slug])
+  @@index([organizationId])
+  @@index([communityId])
+  @@index([bedrooms, bathrooms])
+  @@index([squareFeet])
+  @@index([basePrice])
+}
+
+model InventoryHome {
+  id             String   @id @default(cuid())
+  lot            String?
+  block          String?
+  address        String?
+  price          Float
+  status         String   @default("available") // available, pending, sold, model
+  moveInDate     String?
+  completionDate String?
+  features       String?  // JSON array of included features/upgrades
+  images         String?  // JSON array of images
+  mlsNumber      String?
+  virtualTourUrl String?
+  specialNotes   String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  community   Community @relation(fields: [communityId], references: [id], onDelete: Cascade)
+  communityId String
+
+  floorplan   Floorplan @relation(fields: [floorplanId], references: [id])
+  floorplanId String
+
+  @@index([communityId])
+  @@index([floorplanId])
+  @@index([status])
+}
+
+model Incentive {
+  id          String   @id @default(cuid())
+  title       String
+  description String
+  type        String   // financing, closing_costs, upgrade, price_reduction, realtor_bonus
+  value       String?  // e.g., "$10,000", "3%", "Free upgrades"
+  terms       String?
+  startDate   DateTime?
+  endDate     DateTime?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  community   Community @relation(fields: [communityId], references: [id], onDelete: Cascade)
+  communityId String
+
+  @@index([communityId])
+  @@index([isActive])
+}
+
+// ==========================================
+// LEADS & CONVERSATIONS (Website AI Assistant)
+// ==========================================
+
+model Lead {
+  id              String   @id @default(cuid())
+  email           String?
+  phone           String?
+  firstName       String?
+  lastName        String?
+  source          String?  // website_chat, realtor_portal, direct
+  status          String   @default("new") // new, contacted, qualified, nurturing, closed_won, closed_lost
+  budget          String?
+  timeline        String?
+  notes           String?
+  interestedIn    String?  // JSON array of community/floorplan interests
+  score           Int      @default(0) // Lead score 0-100
+  crmSynced       Boolean  @default(false)
+  crmId           String?  // External CRM ID
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  organizationId String
+
+  community   Community? @relation(fields: [communityId], references: [id])
+  communityId String?
+
+  floorplan   Floorplan? @relation(fields: [floorplanId], references: [id])
+  floorplanId String?
+
+  conversations Conversation[]
+
+  @@index([organizationId])
+  @@index([email])
+  @@index([status])
+  @@index([createdAt])
+}
+
+model Conversation {
+  id           String   @id @default(cuid())
+  sessionId    String   @unique
+  source       String   @default("website") // website, realtor_portal, sales_trainer
+  status       String   @default("active") // active, closed
+  summary      String?
+  sentiment    String?  // positive, neutral, negative
+  intentScore  Int?     // 0-100 how likely to buy
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  lead   Lead?   @relation(fields: [leadId], references: [id])
+  leadId String?
+
+  user   User?   @relation(fields: [userId], references: [id])
+  userId String?
+
+  messages Message[]
+
+  @@index([leadId])
+  @@index([userId])
+  @@index([sessionId])
+  @@index([createdAt])
+}
+
+model Message {
+  id        String   @id @default(cuid())
+  role      String   // user, assistant, system
+  content   String
+  metadata  String?  // JSON for additional data (matched floorplans, etc.)
+  createdAt DateTime @default(now())
+
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  conversationId String
+
+  @@index([conversationId])
+  @@index([createdAt])
+}
+
+// ==========================================
+// CHATBOT CONFIGURATION
+// ==========================================
+
+model ChatbotConfig {
+  id               String   @id @default(cuid())
+  name             String   @default("Website Assistant")
+  welcomeMessage   String   @default("Hi! I'm here to help you find your perfect new home. How can I assist you today?")
+  personality      String?  // JSON for personality traits
+  primaryColor     String   @default("#2563eb")
+  accentColor      String   @default("#3b82f6")
+  position         String   @default("bottom-right")
+  collectEmail     Boolean  @default(true)
+  collectPhone     Boolean  @default(true)
+  collectName      Boolean  @default(true)
+  autoOpen         Boolean  @default(false)
+  autoOpenDelay    Int      @default(30) // seconds
+  isActive         Boolean  @default(true)
+  embedCode        String?
+  customCss        String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  organizationId String       @unique
+}
+
+// ==========================================
+// CRM INTEGRATIONS
+// ==========================================
+
+model CRMIntegration {
+  id           String   @id @default(cuid())
+  provider     String   // hubspot, salesforce, gohighlevel
+  name         String
+  isActive     Boolean  @default(true)
+  accessToken  String?
+  refreshToken String?
+  tokenExpiry  DateTime?
+  apiKey       String?
+  instanceUrl  String?
+  portalId     String?
+  settings     String?  // JSON for provider-specific settings
+  lastSyncAt   DateTime?
+  syncStatus   String   @default("pending") // pending, syncing, success, error
+  syncError    String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  organizationId String
+
+  webhooks CRMWebhook[]
+  syncLogs CRMSyncLog[]
+
+  @@unique([organizationId, provider])
+  @@index([organizationId])
+}
+
+model CRMWebhook {
+  id        String   @id @default(cuid())
+  event     String   // lead.created, lead.updated, conversation.completed
+  url       String
+  isActive  Boolean  @default(true)
+  secret    String?
+  createdAt DateTime @default(now())
+
+  integration   CRMIntegration @relation(fields: [integrationId], references: [id], onDelete: Cascade)
+  integrationId String
+
+  @@index([integrationId])
+}
+
+model CRMSyncLog {
+  id        String   @id @default(cuid())
+  action    String   // create, update, sync
+  entity    String   // lead, contact, conversation
+  entityId  String
+  status    String   // success, error
+  request   String?  // JSON request payload
+  response  String?  // JSON response
+  error     String?
+  createdAt DateTime @default(now())
+
+  integration   CRMIntegration @relation(fields: [integrationId], references: [id], onDelete: Cascade)
+  integrationId String
+
+  @@index([integrationId])
+  @@index([createdAt])
+}
+
+// ==========================================
+// MARKETING ASSISTANT
+// ==========================================
+
+model MarketingContent {
+  id           String   @id @default(cuid())
+  title        String
+  type         String   // social_post, email, blog, listing, ad_copy, realtor_email
+  platform     String?  // facebook, instagram, linkedin, email, website
+  content      String
+  status       String   @default("draft") // draft, approved, published, archived
+  scheduledFor DateTime?
+  publishedAt  DateTime?
+  metadata     String?  // JSON for platform-specific data
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  organizationId String
+
+  createdBy   User?   @relation(fields: [createdById], references: [id])
+  createdById String?
+
+  @@index([organizationId])
+  @@index([type])
+  @@index([status])
+  @@index([createdAt])
+}
+
+// ==========================================
+// AI SEARCH OPTIMIZATION
+// ==========================================
+
+model FAQSection {
+  id        String   @id @default(cuid())
+  category  String   // general, pricing, financing, timeline, features, community
+  question  String
+  answer    String
+  sortOrder Int      @default(0)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  organizationId String
+
+  community   Community? @relation(fields: [communityId], references: [id])
+  communityId String?
+
+  @@index([organizationId])
+  @@index([communityId])
+  @@index([category])
+}
+
+model AISearchMonitor {
+  id          String   @id @default(cuid())
+  platform    String   // chatgpt, gemini, perplexity, bing_copilot
+  query       String
+  response    String
+  mentions    Boolean  @default(false)
+  sentiment   String?  // positive, neutral, negative
+  competitors String?  // JSON array of competitors mentioned
+  checkedAt   DateTime @default(now())
+
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  organizationId String
+
+  @@index([organizationId])
+  @@index([platform])
+  @@index([checkedAt])
+}
+
+// ==========================================
+// COMPETITIVE INTELLIGENCE
+// ==========================================
+
+model Competitor {
+  id          String   @id @default(cuid())
+  name        String
+  website     String?
+  description String?
+  markets     String?  // JSON array of markets/cities
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  organizationId String
+
+  communities  CompetitorCommunity[]
+  reports      CompetitiveReport[]
+
+  @@unique([organizationId, name])
+  @@index([organizationId])
+}
+
+model CompetitorCommunity {
+  id            String   @id @default(cuid())
+  name          String
+  city          String?
+  state         String?
+  priceRange    String?
+  startingPrice Float?
+  amenities     String?  // JSON array
+  schoolInfo    String?
+  hoaFee        Float?
+  lastUpdated   DateTime @default(now())
+  createdAt     DateTime @default(now())
+
+  competitor   Competitor @relation(fields: [competitorId], references: [id], onDelete: Cascade)
+  competitorId String
+
+  floorplans CompetitorFloorplan[]
+
+  @@index([competitorId])
+}
+
+model CompetitorFloorplan {
+  id          String   @id @default(cuid())
+  name        String
+  bedrooms    Int?
+  bathrooms   Float?
+  squareFeet  Int?
+  price       Float?
+  features    String?  // JSON array
+  notes       String?
+  lastUpdated DateTime @default(now())
+  createdAt   DateTime @default(now())
+
+  community   CompetitorCommunity @relation(fields: [communityId], references: [id], onDelete: Cascade)
+  communityId String
+
+  @@index([communityId])
+}
+
+model CompetitiveReport {
+  id            String   @id @default(cuid())
+  title         String
+  reportType    String   // market_overview, pricing_analysis, feature_comparison, incentive_analysis
+  content       String   // JSON structured report content
+  summary       String?
+  insights      String?  // JSON array of key insights
+  generatedAt   DateTime @default(now())
+
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  organizationId String
+
+  competitor   Competitor? @relation(fields: [competitorId], references: [id])
+  competitorId String?
+
+  @@index([organizationId])
+  @@index([competitorId])
+  @@index([reportType])
+}
+
+// ==========================================
+// SALES TRAINER AI
+// ==========================================
+
+model SalesTrainingSession {
+  id          String   @id @default(cuid())
+  scenario    String   // objection_handling, product_knowledge, closing, discovery
+  difficulty  String   @default("medium") // easy, medium, hard
+  buyerPersona String?  // JSON describing the simulated buyer
+  status      String   @default("active") // active, completed, reviewed
+  score       Int?     // 0-100 performance score
+  feedback    String?  // AI-generated feedback
+  duration    Int?     // seconds
+  createdAt   DateTime @default(now())
+  completedAt DateTime?
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId String
+
+  messages SalesTrainingMessage[]
+  metrics  SalesTrainingMetrics?
+
+  @@index([userId])
+  @@index([scenario])
+  @@index([createdAt])
+}
+
+model SalesTrainingMessage {
+  id        String   @id @default(cuid())
+  role      String   // agent, buyer, coach
+  content   String
+  feedback  String?  // Real-time coaching feedback
+  score     Int?     // Message-level score
+  createdAt DateTime @default(now())
+
+  session   SalesTrainingSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  sessionId String
+
+  @@index([sessionId])
+}
+
+model SalesTrainingMetrics {
+  id                String @id @default(cuid())
+  objectionHandling Int?   // 0-100
+  productKnowledge  Int?   // 0-100
+  rapport           Int?   // 0-100
+  closingSkills     Int?   // 0-100
+  listeningSkills   Int?   // 0-100
+  overallScore      Int?   // 0-100
+
+  session   SalesTrainingSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  sessionId String               @unique
+}
+
+// ==========================================
+// REALTOR PORTAL
+// ==========================================
+
+model RealtorPortalConfig {
+  id               String   @id @default(cuid())
+  isActive         Boolean  @default(true)
+  portalUrl        String?
+  welcomeMessage   String?
+  showPricing      Boolean  @default(true)
+  showIncentives   Boolean  @default(true)
+  showInventory    Boolean  @default(true)
+  showFloorplans   Boolean  @default(true)
+  requireLogin     Boolean  @default(false)
+  coopCommission   String?  // Default co-op commission info
+  contactEmail     String?
+  contactPhone     String?
+  customBranding   String?  // JSON for branding options
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  organizationId String       @unique
+
+  realtors RealtorAccess[]
+}
+
+model RealtorAccess {
+  id           String   @id @default(cuid())
+  email        String
+  name         String?
+  company      String?
+  phone        String?
+  licenseNumber String?
+  isVerified   Boolean  @default(false)
+  isActive     Boolean  @default(true)
+  lastLoginAt  DateTime?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  portal   RealtorPortalConfig @relation(fields: [portalId], references: [id], onDelete: Cascade)
+  portalId String
+
+  @@unique([portalId, email])
+  @@index([portalId])
+  @@index([email])
+}
