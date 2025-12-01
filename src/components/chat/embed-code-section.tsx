@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Check, Copy } from "lucide-react";
-import type { ChatbotConfig } from "@/generated/prisma";
+import type { ChatbotConfig } from "@/generated/prisma/client";
 
 interface EmbedCodeSectionProps {
   organizationId: string;

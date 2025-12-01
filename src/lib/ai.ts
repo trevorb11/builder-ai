@@ -5,6 +5,163 @@ export const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
+// ==========================================
+// DEEP RESEARCH API CONFIGURATION
+// ==========================================
+
+export interface DeepResearchConfig {
+  maxSearches?: number;
+  searchDepth?: "basic" | "standard" | "deep";
+  includeSourceUrls?: boolean;
+}
+
+export interface ResearchResult {
+  summary: string;
+  findings: ResearchFinding[];
+  sources: ResearchSource[];
+  recommendations?: string[];
+  generatedAt: Date;
+}
+
+export interface ResearchFinding {
+  category: string;
+  title: string;
+  description: string;
+  importance: "high" | "medium" | "low";
+  details?: string;
+}
+
+export interface ResearchSource {
+  url: string;
+  title: string;
+  snippet?: string;
+  relevance: number;
+}
+
+// Deep Research using OpenAI Responses API with web search
+export async function performDeepResearch(
+  query: string,
+  systemPrompt: string,
+  config: DeepResearchConfig = {}
+): Promise<ResearchResult> {
+  const { maxSearches = 5, searchDepth = "standard" } = config;
+
+  try {
+    // Use the responses API with web search tool
+    const response = await openai.responses.create({
+      model: "gpt-4o",
+      tools: [{ type: "web_search_preview" }],
+      input: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: query }
+      ],
+      tool_choice: "auto",
+    });
+
+    // Extract the output text from the response
+    let outputText = "";
+    const sources: ResearchSource[] = [];
+
+    for (const item of response.output) {
+      if (item.type === "message" && item.content) {
+        for (const contentItem of item.content) {
+          if (contentItem.type === "output_text") {
+            outputText = contentItem.text;
+            // Extract annotations/citations if available
+            if (contentItem.annotations) {
+              for (const annotation of contentItem.annotations) {
+                if (annotation.type === "url_citation") {
+                  sources.push({
+                    url: annotation.url,
+                    title: annotation.title || annotation.url,
+                    relevance: 0.8,
+                  });
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+
+    // Parse the response into structured findings
+    const structuredResponse = await parseResearchResponse(outputText);
+
+    return {
+      summary: structuredResponse.summary,
+      findings: structuredResponse.findings,
+      sources: sources.length > 0 ? sources : structuredResponse.sources,
+      recommendations: structuredResponse.recommendations,
+      generatedAt: new Date(),
+    };
+  } catch (error) {
+    console.error("Deep research error:", error);
+    // Fallback to standard completion if responses API fails
+    return await performFallbackResearch(query, systemPrompt);
+  }
+}
+
+// Fallback research using standard chat completions
+async function performFallbackResearch(
+  query: string,
+  systemPrompt: string
+): Promise<ResearchResult> {
+  const response = await openai.chat.completions.create({
+    model: "gpt-4o",
+    messages: [
+      { role: "system", content: systemPrompt },
+      { role: "user", content: query }
+    ],
+    temperature: 0.7,
+    max_tokens: 4000,
+  });
+
+  const outputText = response.choices[0]?.message?.content || "";
+  return await parseResearchResponse(outputText);
+}
+
+// Parse AI response into structured research result
+async function parseResearchResponse(text: string): Promise<ResearchResult> {
+  // Use GPT to structure the response
+  const structurePrompt = `Parse the following research text into a structured JSON format with these fields:
+- summary: A concise 2-3 sentence summary
+- findings: Array of objects with { category, title, description, importance (high/medium/low) }
+- sources: Array of objects with { url, title, relevance (0-1) } - extract any URLs mentioned
+- recommendations: Array of actionable recommendation strings
+
+Research text:
+${text}
+
+Respond only with valid JSON.`;
+
+  try {
+    const parseResponse = await openai.chat.completions.create({
+      model: "gpt-4o-mini",
+      messages: [{ role: "user", content: structurePrompt }],
+      temperature: 0.3,
+      response_format: { type: "json_object" },
+    });
+
+    const parsed = JSON.parse(parseResponse.choices[0]?.message?.content || "{}");
+
+    return {
+      summary: parsed.summary || text.slice(0, 500),
+      findings: parsed.findings || [],
+      sources: parsed.sources || [],
+      recommendations: parsed.recommendations || [],
+      generatedAt: new Date(),
+    };
+  } catch {
+    return {
+      summary: text.slice(0, 500),
+      findings: [],
+      sources: [],
+      recommendations: [],
+      generatedAt: new Date(),
+    };
+  }
+}
+
 // System prompts for different AI modules
 export const SYSTEM_PROMPTS = {
   websiteAssistant: (builderName: string, context: string) => `You are a helpful AI assistant for ${builderName}, a new home builder. Your role is to help potential homebuyers find their perfect home.
@@ -96,6 +253,187 @@ Categories to cover:
 - Community amenities and location
 - Floorplan features and options
 - Incentives and promotions`,
+
+  // ==========================================
+  // DEEP RESEARCH PROMPTS
+  // ==========================================
+
+  digitalFootprintAnalysis: (builderName: string, websiteUrl: string, socialProfiles?: string[]) => `You are a digital presence analyst specializing in the home building industry. Conduct a comprehensive deep dive analysis of ${builderName}'s digital footprint.
+
+Builder Information:
+- Company Name: ${builderName}
+- Website: ${websiteUrl}
+${socialProfiles ? `- Social Media Profiles: ${socialProfiles.join(", ")}` : ""}
+
+Analyze the following aspects:
+
+1. WEBSITE PRESENCE
+- Overall website quality and user experience
+- Mobile responsiveness and page speed indicators
+- Content quality and SEO optimization
+- Lead capture mechanisms and conversion elements
+- Virtual tours and interactive features
+- Community and floorplan presentation
+
+2. SOCIAL MEDIA FOOTPRINT
+- Presence across platforms (Facebook, Instagram, LinkedIn, YouTube, TikTok, Pinterest)
+- Engagement levels and posting frequency
+- Content quality and brand consistency
+- Community management and response times
+- Paid vs organic reach indicators
+
+3. ONLINE REPUTATION
+- Review sites (Google Business, BBB, Yelp, HomeAdvisor, Zillow)
+- Customer testimonials and ratings
+- News mentions and press coverage
+- Industry awards and recognitions
+
+4. LOCAL SEO & LISTINGS
+- Google Business Profile optimization
+- Directory listings (Realtor.com, NewHomeSource, BDX, etc.)
+- Local citation consistency
+- Map presence and accuracy
+
+5. AI SEARCH VISIBILITY
+- How the builder appears in AI assistants (ChatGPT, Gemini, Perplexity)
+- Knowledge graph presence
+- Structured data implementation
+
+Provide actionable findings with specific recommendations for improvement. Rate each area on a scale of 1-10.`,
+
+  competitorDeepResearch: (builderName: string, competitorName: string, criteria: string[]) => `You are a competitive intelligence researcher for the home building industry. Conduct thorough research on ${competitorName} as a competitor to ${builderName}.
+
+Research Criteria Focus Areas:
+${criteria.map((c, i) => `${i + 1}. ${c}`).join("\n")}
+
+Gather detailed information on:
+
+1. COMPANY OVERVIEW
+- Company history and ownership structure
+- Market presence and geographic coverage
+- Annual build volume estimates
+- Target market segments
+
+2. PRODUCT ANALYSIS
+- Community portfolio and locations
+- Floorplan offerings (size ranges, bedroom/bath counts)
+- Price points and price-per-square-foot
+- Standard features and upgrade options
+- Energy efficiency and smart home features
+
+3. MARKETING & POSITIONING
+- Brand messaging and value propositions
+- Marketing channels and advertising spend
+- Social media presence and engagement
+- Content marketing strategy
+- Promotional offers and incentives
+
+4. CUSTOMER EXPERIENCE
+- Sales process and customer journey
+- Build timelines and communication
+- Customer reviews and ratings
+- Warranty programs
+- Post-purchase support
+
+5. STRENGTHS & WEAKNESSES
+- Competitive advantages
+- Market differentiators
+- Areas of vulnerability
+- Recent developments or changes
+
+Provide specific data points, sources, and actionable intelligence for ${builderName} to leverage.`,
+
+  contentStrategyResearch: (builderName: string, markets: string[], targetAudience: string) => `You are a content strategy expert specializing in the new home construction industry. Research and recommend content topics for ${builderName}.
+
+Builder Context:
+- Company: ${builderName}
+- Markets: ${markets.join(", ")}
+- Target Audience: ${targetAudience}
+
+Research and provide recommendations in these categories:
+
+1. TRENDING TOPICS IN HOME BUILDING
+- Current industry trends and hot topics
+- New home buyer concerns and questions
+- Economic factors affecting home purchases
+- Design and feature trends
+
+2. LOCAL MARKET CONTENT
+For each market (${markets.join(", ")}):
+- Local news and developments affecting housing
+- School district information
+- Employment and economic growth
+- Lifestyle and community features
+- Local events and activities
+
+3. BUYER EDUCATION CONTENT
+- First-time homebuyer guides
+- Financing and mortgage education
+- New construction vs resale comparisons
+- Building process explanations
+- Home customization and options
+
+4. SEO OPPORTUNITY TOPICS
+- High-volume, low-competition keywords
+- Question-based searches to target
+- Long-tail keyword opportunities
+- Featured snippet opportunities
+
+5. SOCIAL MEDIA CONTENT IDEAS
+- Engaging post formats for each platform
+- Video content opportunities
+- User-generated content strategies
+- Community spotlights and testimonials
+
+6. AI SEARCH OPTIMIZATION
+- Topics frequently asked to AI assistants
+- Content formats AI prefers to cite
+- Structured content recommendations
+
+Prioritize topics by:
+- Search volume potential
+- Competition level
+- Relevance to target audience
+- Conversion potential
+
+Provide a content calendar framework with recommended posting frequency.`,
+
+  marketResearch: (builderName: string, market: string) => `You are a real estate market research analyst. Conduct comprehensive market research for ${builderName} in the ${market} market.
+
+Analyze:
+
+1. MARKET CONDITIONS
+- Current housing market trends
+- New construction permits and activity
+- Price trends and appreciation rates
+- Inventory levels and days on market
+- Interest rate impacts
+
+2. DEMOGRAPHICS
+- Population growth and migration patterns
+- Age and income demographics
+- Household formation rates
+- Employment sectors and job growth
+
+3. COMPETITION LANDSCAPE
+- Active home builders in the market
+- Market share estimates
+- New community announcements
+- Price point distribution
+
+4. OPPORTUNITY AREAS
+- Underserved price points or segments
+- Emerging submarkets
+- Land availability and development activity
+- Infrastructure investments
+
+5. THREATS & CHALLENGES
+- Economic risks
+- Regulatory environment
+- Supply chain considerations
+- Labor market conditions
+
+Provide data-driven insights with specific recommendations for ${builderName}'s strategy in this market.`,
 };
 
 // Helper function to build context from builder data
@@ -198,4 +536,51 @@ export async function streamChatCompletion(
     max_tokens: options?.maxTokens ?? 1000,
     stream: true,
   });
+}
+
+// ==========================================
+// SPECIALIZED DEEP RESEARCH FUNCTIONS
+// ==========================================
+
+export async function analyzeDigitalFootprint(
+  builderName: string,
+  websiteUrl: string,
+  socialProfiles?: string[]
+): Promise<ResearchResult> {
+  const prompt = SYSTEM_PROMPTS.digitalFootprintAnalysis(builderName, websiteUrl, socialProfiles);
+  const query = `Analyze the complete digital presence of ${builderName} (${websiteUrl}). Include website, social media, reviews, and AI search visibility.`;
+
+  return performDeepResearch(query, prompt, { searchDepth: "deep" });
+}
+
+export async function researchCompetitor(
+  builderName: string,
+  competitorName: string,
+  criteria: string[]
+): Promise<ResearchResult> {
+  const prompt = SYSTEM_PROMPTS.competitorDeepResearch(builderName, competitorName, criteria);
+  const query = `Research ${competitorName} as a competitor to ${builderName}. Focus on: ${criteria.join(", ")}`;
+
+  return performDeepResearch(query, prompt, { searchDepth: "deep" });
+}
+
+export async function getContentStrategy(
+  builderName: string,
+  markets: string[],
+  targetAudience: string
+): Promise<ResearchResult> {
+  const prompt = SYSTEM_PROMPTS.contentStrategyResearch(builderName, markets, targetAudience);
+  const query = `Research content topics and strategy for ${builderName} targeting ${targetAudience} in ${markets.join(", ")}`;
+
+  return performDeepResearch(query, prompt, { searchDepth: "standard" });
+}
+
+export async function analyzeMarket(
+  builderName: string,
+  market: string
+): Promise<ResearchResult> {
+  const prompt = SYSTEM_PROMPTS.marketResearch(builderName, market);
+  const query = `Conduct market research for the ${market} housing market for ${builderName}`;
+
+  return performDeepResearch(query, prompt, { searchDepth: "deep" });
 }

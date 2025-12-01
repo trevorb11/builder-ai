@@ -33,6 +33,7 @@ model User {
   conversations Conversation[]
   salesSessions SalesTrainingSession[]
   contentDrafts MarketingContent[]
+  researchReports DeepResearchReport[]
 
   @@index([organizationId])
   @@index([email])
@@ -110,6 +111,12 @@ model Organization {
   realtorPortal      RealtorPortalConfig?
   aiSearchMonitor    AISearchMonitor[]
   competitiveReports CompetitiveReport[]
+
+  // Deep Research relations
+  deepResearchReports    DeepResearchReport[]
+  digitalFootprintConfig DigitalFootprintConfig?
+  contentStrategyConfig  ContentStrategyConfig?
+  contentTopics          ContentTopic[]
 
   @@index([slug])
 }
@@ -666,4 +673,96 @@ model RealtorAccess {
   @@unique([portalId, email])
   @@index([portalId])
   @@index([email])
+}
+
+// ==========================================
+// DEEP RESEARCH
+// ==========================================
+
+model DeepResearchReport {
+  id              String   @id @default(cuid())
+  type            String   // digital_footprint, competitor_research, content_strategy, market_analysis
+  title           String
+  status          String   @default("pending") // pending, in_progress, completed, failed
+  summary         String?
+  findings        String?  // JSON array of findings
+  sources         String?  // JSON array of sources
+  recommendations String?  // JSON array of recommendations
+  rawResponse     String?  // Full AI response
+  metadata        String?  // JSON for type-specific data
+  errorMessage    String?
+  startedAt       DateTime?
+  completedAt     DateTime?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  organizationId String
+
+  createdBy   User?   @relation(fields: [createdById], references: [id])
+  createdById String?
+
+  @@index([organizationId])
+  @@index([type])
+  @@index([status])
+  @@index([createdAt])
+}
+
+model DigitalFootprintConfig {
+  id               String   @id @default(cuid())
+  websiteUrl       String?
+  facebookUrl      String?
+  instagramUrl     String?
+  linkedinUrl      String?
+  youtubeUrl       String?
+  tiktokUrl        String?
+  pinterestUrl     String?
+  googleBusinessUrl String?
+  yelpUrl          String?
+  bbbUrl           String?
+  houzzUrl         String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  organizationId String       @unique
+}
+
+model ContentStrategyConfig {
+  id             String   @id @default(cuid())
+  markets        String?  // JSON array of target markets
+  targetAudience String?
+  brandVoice     String?
+  contentGoals   String?  // JSON array of goals
+  competitors    String?  // JSON array of competitor names to monitor
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  organizationId String       @unique
+}
+
+model ContentTopic {
+  id          String   @id @default(cuid())
+  title       String
+  category    String   // trending, local, education, seo, social, ai_search
+  description String?
+  keywords    String?  // JSON array of related keywords
+  priority    String   @default("medium") // high, medium, low
+  status      String   @default("suggested") // suggested, planned, in_progress, published, archived
+  searchVolume Int?
+  competition  String?  // low, medium, high
+  notes       String?
+  scheduledFor DateTime?
+  publishedAt  DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  organizationId String
+
+  @@index([organizationId])
+  @@index([category])
+  @@index([status])
+  @@index([priority])
 }

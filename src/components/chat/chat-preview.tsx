@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Send, X, MessageSquare, Loader2 } from "lucide-react";
-import type { ChatbotConfig } from "@/generated/prisma";
+import type { ChatbotConfig } from "@/generated/prisma/client";
 
 interface ChatPreviewProps {
   config: ChatbotConfig | null;

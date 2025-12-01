@@ -14,7 +14,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import type { ChatbotConfig } from "@/generated/prisma";
+import type { ChatbotConfig } from "@/generated/prisma/client";
 
 interface ChatbotConfigFormProps {
   config: ChatbotConfig | null;
