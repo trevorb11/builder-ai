@@ -66,14 +66,16 @@ export function DigitalFootprintAnalyzer({
       });
 
       if (!response.ok) {
-        throw new Error("Failed to analyze");
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || "Failed to analyze");
       }
 
       // Refresh the page to show new report
       window.location.reload();
     } catch (error) {
       console.error("Analysis error:", error);
-      alert("Failed to start analysis. Please try again.");
+      const errorMessage = error instanceof Error ? error.message : "Unknown error";
+      alert(`Analysis failed: ${errorMessage}. Please check your OpenAI API key and try again.`);
     } finally {
       setIsAnalyzing(false);
     }

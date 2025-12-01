@@ -101,7 +101,8 @@ export function CompetitorResearchForm({
       });
 
       if (!response.ok) {
-        throw new Error("Failed to start research");
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || "Failed to start research");
       }
 
       // Add to recent searches
@@ -115,7 +116,8 @@ export function CompetitorResearchForm({
       window.location.reload();
     } catch (error) {
       console.error("Research error:", error);
-      alert("Failed to start research. Please try again.");
+      const errorMessage = error instanceof Error ? error.message : "Unknown error";
+      alert(`Research failed: ${errorMessage}. Please check your OpenAI API key and try again.`);
     } finally {
       setIsResearching(false);
     }

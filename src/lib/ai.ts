@@ -38,51 +38,25 @@ export interface ResearchSource {
   relevance: number;
 }
 
-// Deep Research using OpenAI Responses API with web search
+// Deep Research using OpenAI Chat Completions
 export async function performDeepResearch(
   query: string,
   systemPrompt: string,
   config: DeepResearchConfig = {}
 ): Promise<ResearchResult> {
-  const { maxSearches = 5, searchDepth = "standard" } = config;
-
   try {
-    // Use the responses API with web search tool
-    const response = await openai.responses.create({
+    // Use chat completions for research analysis
+    const response = await openai.chat.completions.create({
       model: "gpt-4o",
-      tools: [{ type: "web_search_preview" }],
-      input: [
+      messages: [
         { role: "system", content: systemPrompt },
         { role: "user", content: query }
       ],
-      tool_choice: "auto",
+      temperature: 0.7,
+      max_tokens: 4000,
     });
 
-    // Extract the output text from the response
-    let outputText = "";
-    const sources: ResearchSource[] = [];
-
-    for (const item of response.output) {
-      if (item.type === "message" && item.content) {
-        for (const contentItem of item.content) {
-          if (contentItem.type === "output_text") {
-            outputText = contentItem.text;
-            // Extract annotations/citations if available
-            if (contentItem.annotations) {
-              for (const annotation of contentItem.annotations) {
-                if (annotation.type === "url_citation") {
-                  sources.push({
-                    url: annotation.url,
-                    title: annotation.title || annotation.url,
-                    relevance: 0.8,
-                  });
-                }
-              }
-            }
-          }
-        }
-      }
-    }
+    const outputText = response.choices[0]?.message?.content || "";
 
     // Parse the response into structured findings
     const structuredResponse = await parseResearchResponse(outputText);
@@ -90,34 +64,14 @@ export async function performDeepResearch(
     return {
       summary: structuredResponse.summary,
       findings: structuredResponse.findings,
-      sources: sources.length > 0 ? sources : structuredResponse.sources,
+      sources: structuredResponse.sources,
       recommendations: structuredResponse.recommendations,
       generatedAt: new Date(),
     };
   } catch (error) {
     console.error("Deep research error:", error);
-    // Fallback to standard completion if responses API fails
-    return await performFallbackResearch(query, systemPrompt);
+    throw error;
   }
-}
-
-// Fallback research using standard chat completions
-async function performFallbackResearch(
-  query: string,
-  systemPrompt: string
-): Promise<ResearchResult> {
-  const response = await openai.chat.completions.create({
-    model: "gpt-4o",
-    messages: [
-      { role: "system", content: systemPrompt },
-      { role: "user", content: query }
-    ],
-    temperature: 0.7,
-    max_tokens: 4000,
-  });
-
-  const outputText = response.choices[0]?.message?.content || "";
-  return await parseResearchResponse(outputText);
 }
 
 // Parse AI response into structured research result
