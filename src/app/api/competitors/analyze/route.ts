@@ -82,14 +82,15 @@ Please provide:
 
 Be specific and actionable.`;
 
+    // Use Replit AI Integrations for competitive analysis
     const completion = await openai.chat.completions.create({
-      model: "gpt-4o",
+      model: "gpt-4o", // gpt-4o is supported by Replit AI Integrations
       messages: [
         { role: "system", content: systemPrompt },
         { role: "user", content: userPrompt },
       ],
       temperature: 0.7,
-      max_tokens: 1500,
+      max_completion_tokens: 1500,
     });
 
     const analysis = completion.choices[0]?.message?.content || "";

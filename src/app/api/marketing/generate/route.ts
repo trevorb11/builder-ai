@@ -108,14 +108,15 @@ export async function POST(request: NextRequest) {
 
 Please generate the content now. Make it compelling, accurate, and on-brand. Use actual data from the builder information provided.`;
 
+    // Use Replit AI Integrations for content generation
     const completion = await openai.chat.completions.create({
-      model: "gpt-4o",
+      model: "gpt-4o", // gpt-4o is supported by Replit AI Integrations
       messages: [
         { role: "system", content: systemPrompt },
         { role: "user", content: userPrompt },
       ],
       temperature: 0.8,
-      max_tokens: 1500,
+      max_completion_tokens: 1500,
     });
 
     const generatedContent = completion.choices[0]?.message?.content || "";

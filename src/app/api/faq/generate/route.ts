@@ -69,14 +69,15 @@ Important guidelines:
 
 Return ONLY the JSON array, no additional text.`;
 
+    // Use Replit AI Integrations for FAQ generation
     const completion = await openai.chat.completions.create({
-      model: "gpt-4o",
+      model: "gpt-4o", // gpt-4o is supported by Replit AI Integrations
       messages: [
         { role: "system", content: systemPrompt },
         { role: "user", content: userPrompt },
       ],
       temperature: 0.7,
-      max_tokens: 2000,
+      max_completion_tokens: 2000,
     });
 
     const content = completion.choices[0]?.message?.content || "[]";

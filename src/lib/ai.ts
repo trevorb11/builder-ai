@@ -1,8 +1,12 @@
 import OpenAI from "openai";
 
-// Initialize OpenAI client
+// Initialize OpenAI client using Replit AI Integrations
+// This uses Replit's AI Integrations service, which provides OpenAI-compatible API access
+// without requiring your own API key. Charges are billed to your Replit credits.
+// The newest OpenAI model is "gpt-5" which was released August 7, 2025.
 export const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
+  baseURL: process.env.AI_INTEGRATIONS_OPENAI_BASE_URL,
+  apiKey: process.env.AI_INTEGRATIONS_OPENAI_API_KEY,
 });
 
 // ==========================================
@@ -39,6 +43,7 @@ export interface ResearchSource {
 }
 
 // Deep Research using OpenAI Responses API with web search
+// Uses Replit AI Integrations which supports the responses API with web_search_preview tool
 export async function performDeepResearch(
   query: string,
   systemPrompt: string,
@@ -47,15 +52,17 @@ export async function performDeepResearch(
   const { maxSearches = 5, searchDepth = "standard" } = config;
 
   try {
-    // Use the responses API with web search tool
+    // Use the responses API with web search tool for deep research capability
+    // The web_search_preview tool enables real-time web search for up-to-date information
+    // Input must be structured as array of {role, content} messages for multi-turn conversations
     const response = await openai.responses.create({
-      model: "gpt-4o",
+      model: "gpt-4o", // gpt-4o is supported by Replit AI Integrations for responses API
       tools: [{ type: "web_search_preview" }],
+      tool_choice: "auto",
       input: [
         { role: "system", content: systemPrompt },
         { role: "user", content: query }
       ],
-      tool_choice: "auto",
     });
 
     // Extract the output text from the response
@@ -107,13 +114,13 @@ async function performFallbackResearch(
   systemPrompt: string
 ): Promise<ResearchResult> {
   const response = await openai.chat.completions.create({
-    model: "gpt-4o",
+    model: "gpt-4o", // gpt-4o is supported by Replit AI Integrations
     messages: [
       { role: "system", content: systemPrompt },
       { role: "user", content: query }
     ],
     temperature: 0.7,
-    max_tokens: 4000,
+    max_completion_tokens: 4000,
   });
 
   const outputText = response.choices[0]?.message?.content || "";
@@ -135,10 +142,12 @@ ${text}
 Respond only with valid JSON.`;
 
   try {
+    // Use Replit AI Integrations for parsing research into structured format
     const parseResponse = await openai.chat.completions.create({
-      model: "gpt-4o-mini",
+      model: "gpt-4o-mini", // gpt-4o-mini is supported by Replit AI Integrations
       messages: [{ role: "user", content: structurePrompt }],
       temperature: 0.3,
+      max_completion_tokens: 2000,
       response_format: { type: "json_object" },
     });
 
@@ -501,7 +510,7 @@ export async function buildBuilderContext(organizationId: string): Promise<strin
   return context;
 }
 
-// Chat completion helper
+// Chat completion helper - uses Replit AI Integrations
 export async function getChatCompletion(
   messages: { role: "system" | "user" | "assistant"; content: string }[],
   options?: {
@@ -511,16 +520,16 @@ export async function getChatCompletion(
   }
 ) {
   const response = await openai.chat.completions.create({
-    model: options?.model || "gpt-4o",
+    model: options?.model || "gpt-4o", // gpt-4o is supported by Replit AI Integrations
     messages,
     temperature: options?.temperature ?? 0.7,
-    max_tokens: options?.maxTokens ?? 1000,
+    max_completion_tokens: options?.maxTokens ?? 1000,
   });
 
   return response.choices[0]?.message?.content || "";
 }
 
-// Streaming chat completion helper
+// Streaming chat completion helper - uses Replit AI Integrations
 export async function streamChatCompletion(
   messages: { role: "system" | "user" | "assistant"; content: string }[],
   options?: {
@@ -530,10 +539,10 @@ export async function streamChatCompletion(
   }
 ) {
   return openai.chat.completions.create({
-    model: options?.model || "gpt-4o",
+    model: options?.model || "gpt-4o", // gpt-4o is supported by Replit AI Integrations
     messages,
     temperature: options?.temperature ?? 0.7,
-    max_tokens: options?.maxTokens ?? 1000,
+    max_completion_tokens: options?.maxTokens ?? 1000,
     stream: true,
   });
 }
