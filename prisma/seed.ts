@@ -1,7 +1,10 @@
 import { PrismaClient } from "../src/generated/prisma/client";
+import { PrismaLibSql } from "@prisma/adapter-libsql";
 
-// @ts-expect-error Prisma 7 strict constructor
-const prisma = new PrismaClient();
+const adapter = new PrismaLibSql({
+  url: process.env.DATABASE_URL || "file:./dev.db",
+});
+const prisma = new PrismaClient({ adapter });
 
 async function main() {
   console.log("Starting seed...");
