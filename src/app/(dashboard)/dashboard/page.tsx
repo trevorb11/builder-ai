@@ -23,6 +23,13 @@ import {
   Clock,
   CheckCircle,
   AlertCircle,
+  Play,
+  BookOpen,
+  Zap,
+  BarChart3,
+  Mail,
+  Star,
+  ChevronRight,
 } from "lucide-react";
 
 async function getDashboardStats(organizationId: string) {
@@ -35,6 +42,7 @@ async function getDashboardStats(organizationId: string) {
     salesSessions,
     researchReports,
     contentTopics,
+    organization,
   ] = await Promise.all([
     prisma.community.count({ where: { organizationId } }),
     prisma.floorplan.count({ where: { organizationId } }),
@@ -50,6 +58,10 @@ async function getDashboardStats(organizationId: string) {
       where: { organizationId, status: "completed" },
     }),
     prisma.contentTopic.count({ where: { organizationId } }),
+    prisma.organization.findUnique({
+      where: { id: organizationId },
+      select: { name: true, website: true },
+    }),
   ]);
 
   const recentLeads = await prisma.lead.findMany({
@@ -62,6 +74,7 @@ async function getDashboardStats(organizationId: string) {
       lastName: true,
       email: true,
       status: true,
+      score: true,
       createdAt: true,
       community: { select: { name: true } },
     },
@@ -80,6 +93,11 @@ async function getDashboardStats(organizationId: string) {
     },
   });
 
+  // Check if chatbot is configured
+  const chatbotConfig = await prisma.chatbotConfig.findUnique({
+    where: { organizationId },
+  });
+
   return {
     communities,
     floorplans,
@@ -91,78 +109,83 @@ async function getDashboardStats(organizationId: string) {
     contentTopics,
     recentLeads,
     recentResearch,
+    organization,
+    hasChatbot: !!chatbotConfig,
   };
 }
 
-const researchTools = [
+// Quick action cards for new users
+const quickActions = [
   {
-    name: "Digital Footprint",
-    description: "Analyze your online presence",
+    title: "Add Your First Community",
+    description: "Start by adding the communities where you build homes",
+    href: "/dashboard/communities",
+    icon: Building2,
+    color: "from-emerald-500 to-emerald-600",
+    priority: 1,
+    checkKey: "communities",
+  },
+  {
+    title: "Add Floorplans",
+    description: "Add your floorplan catalog with pricing and specs",
+    href: "/dashboard/floorplans",
+    icon: Home,
+    color: "from-violet-500 to-violet-600",
+    priority: 2,
+    checkKey: "floorplans",
+  },
+  {
+    title: "Set Up AI Chatbot",
+    description: "Configure your website AI assistant to capture leads",
+    href: "/dashboard/assistant",
+    icon: MessageSquare,
+    color: "from-blue-500 to-blue-600",
+    priority: 3,
+    checkKey: "hasChatbot",
+  },
+  {
+    title: "Analyze Your Online Presence",
+    description: "Get AI insights on your digital footprint",
     href: "/dashboard/research/footprint",
     icon: Globe,
-    gradient: "from-teal-400 to-teal-600",
-    shadow: "shadow-teal-500/20",
-  },
-  {
-    name: "Competitor Intel",
-    description: "Deep competitor analysis",
-    href: "/dashboard/research/competitors",
-    icon: Target,
-    gradient: "from-amber-400 to-amber-600",
-    shadow: "shadow-amber-500/20",
-  },
-  {
-    name: "Content Strategy",
-    description: "Topic recommendations",
-    href: "/dashboard/research/content",
-    icon: Lightbulb,
-    gradient: "from-purple-400 to-purple-600",
-    shadow: "shadow-purple-500/20",
+    color: "from-teal-500 to-teal-600",
+    priority: 4,
+    checkKey: "researchReports",
   },
 ];
 
-const aiTools = [
+const featureCards = [
   {
-    name: "Website Assistant",
-    description: "AI chatbot for your website",
+    title: "AI Website Assistant",
+    description: "24/7 chatbot that answers buyer questions and captures leads automatically",
     href: "/dashboard/assistant",
     icon: MessageSquare,
-    color: "bg-blue-500",
+    gradient: "from-blue-500 to-blue-600",
+    benefits: ["Capture leads 24/7", "Answer FAQs instantly", "Qualify buyers"],
   },
   {
-    name: "Marketing",
-    description: "Generate content with AI",
+    title: "Deep Research",
+    description: "AI-powered analysis of your digital presence and competitors",
+    href: "/dashboard/research/footprint",
+    icon: Search,
+    gradient: "from-teal-500 to-teal-600",
+    benefits: ["Digital footprint audit", "Competitor insights", "Content ideas"],
+  },
+  {
+    title: "Marketing Generator",
+    description: "Create social posts, emails, and listings with AI in seconds",
     href: "/dashboard/marketing",
     icon: FileEdit,
-    color: "bg-violet-500",
+    gradient: "from-violet-500 to-violet-600",
+    benefits: ["Social media posts", "Email campaigns", "Listing descriptions"],
   },
   {
-    name: "SEO & AI Search",
-    description: "Optimize for AI discovery",
-    href: "/dashboard/seo",
-    icon: Search,
-    color: "bg-emerald-500",
-  },
-  {
-    name: "Sales Training",
-    description: "Practice with AI roleplay",
+    title: "Sales Training",
+    description: "Practice objection handling with AI roleplay coaching",
     href: "/dashboard/training",
     icon: GraduationCap,
-    color: "bg-pink-500",
-  },
-  {
-    name: "CRM Integration",
-    description: "Connect HubSpot, Salesforce",
-    href: "/dashboard/crm",
-    icon: Link2,
-    color: "bg-cyan-500",
-  },
-  {
-    name: "Realtor Portal",
-    description: "Manage agent resources",
-    href: "/dashboard/realtors",
-    icon: Users,
-    color: "bg-indigo-500",
+    gradient: "from-pink-500 to-pink-600",
+    benefits: ["Realistic scenarios", "Instant feedback", "Track improvement"],
   },
 ];
 
@@ -175,29 +198,32 @@ export default async function DashboardPage() {
     stats = await getDashboardStats(organizationId);
   }
 
+  const isNewUser = !stats || (stats.communities === 0 && stats.floorplans === 0);
+  const userName = session?.user?.name?.split(" ")[0] || "there";
+
   return (
-    <div className="min-h-screen bg-gray-50/50">
-      {/* Header */}
-      <div className="border-b border-gray-200 bg-white">
-        <div className="px-8 py-6">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50/30">
+      {/* Welcome Header */}
+      <div className="border-b border-gray-100 bg-white/80 backdrop-blur-sm sticky top-0 z-10">
+        <div className="px-8 py-5">
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-2xl font-bold text-gray-900">
-                Welcome back{session?.user?.name ? `, ${session.user.name}` : ""}
+                {isNewUser ? `Welcome to Builder AI, ${userName}!` : `Welcome back, ${userName}`}
               </h1>
               <p className="mt-1 text-gray-500">
-                {session?.user?.organizationName || "Your AI-powered builder tools dashboard"}
+                {stats?.organization?.name || "Your AI-powered home builder toolkit"}
               </p>
             </div>
             <div className="flex items-center gap-3">
-              <Link href="/dashboard/communities/new">
+              <Link href="/dashboard/leads">
                 <Button variant="outline" className="gap-2">
-                  <Building2 className="h-4 w-4" />
-                  Add Community
+                  <Users className="h-4 w-4" />
+                  {stats?.leads || 0} Leads
                 </Button>
               </Link>
               <Link href="/dashboard/research/footprint">
-                <Button className="gap-2 bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600">
+                <Button className="gap-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-lg shadow-blue-500/25">
                   <Sparkles className="h-4 w-4" />
                   Start Research
                 </Button>
@@ -208,225 +234,328 @@ export default async function DashboardPage() {
       </div>
 
       <div className="p-8 space-y-8">
-        {/* Stats Grid */}
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-          <StatCard
-            title="Communities"
-            value={stats?.communities || 0}
-            description="Active communities"
-            icon={Building2}
-            trend="+2 this month"
-          />
-          <StatCard
-            title="Total Leads"
-            value={stats?.leads || 0}
-            description="From AI Assistant"
-            icon={Users}
-            trend="+12% vs last month"
-          />
-          <StatCard
-            title="Conversations"
-            value={stats?.conversations || 0}
-            description="Chat sessions"
-            icon={MessageSquare}
-          />
-          <StatCard
-            title="Research Reports"
-            value={stats?.researchReports || 0}
-            description="Completed analyses"
-            icon={Activity}
-          />
-        </div>
-
-        {/* Deep Research Section */}
-        <div>
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-2">
-              <h2 className="text-lg font-semibold text-gray-900">Deep Research</h2>
-              <span className="inline-flex items-center gap-1 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 px-2 py-0.5 text-[10px] font-semibold text-white">
-                <Sparkles className="h-2.5 w-2.5" />
-                AI Powered
-              </span>
-            </div>
-            <Link href="/dashboard/research/footprint" className="text-sm text-blue-600 hover:text-blue-800 font-medium">
-              View all research
-            </Link>
-          </div>
-
-          <div className="grid gap-4 md:grid-cols-3">
-            {researchTools.map((tool) => (
-              <Link key={tool.name} href={tool.href}>
-                <Card className="h-full transition-all duration-200 hover:shadow-lg hover:-translate-y-1 card-hover overflow-hidden group">
-                  <CardContent className="p-6">
-                    <div className="flex items-start gap-4">
-                      <div className={`flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br ${tool.gradient} shadow-lg ${tool.shadow}`}>
-                        <tool.icon className="h-6 w-6 text-white" />
-                      </div>
-                      <div className="flex-1">
-                        <h3 className="font-semibold text-gray-900 group-hover:text-blue-600 transition-colors">
-                          {tool.name}
-                        </h3>
-                        <p className="text-sm text-gray-500 mt-1">
-                          {tool.description}
-                        </p>
-                      </div>
-                      <ArrowRight className="h-5 w-5 text-gray-300 group-hover:text-blue-500 transition-colors" />
-                    </div>
-                  </CardContent>
-                </Card>
-              </Link>
-            ))}
-          </div>
-        </div>
-
-        {/* AI Tools Grid */}
-        <div>
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold text-gray-900">AI Tools</h2>
-          </div>
-
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {aiTools.map((tool) => (
-              <Link key={tool.name} href={tool.href}>
-                <Card className="h-full transition-all duration-200 hover:shadow-md">
-                  <CardContent className="p-4">
-                    <div className="flex items-center gap-3">
-                      <div className={`flex h-10 w-10 items-center justify-center rounded-lg ${tool.color}`}>
-                        <tool.icon className="h-5 w-5 text-white" />
-                      </div>
-                      <div>
-                        <h3 className="font-medium text-gray-900">{tool.name}</h3>
-                        <p className="text-xs text-gray-500">{tool.description}</p>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              </Link>
-            ))}
-          </div>
-        </div>
-
-        {/* Recent Activity Section */}
-        <div className="grid gap-6 lg:grid-cols-2">
-          {/* Recent Leads */}
-          <Card>
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-base">Recent Leads</CardTitle>
-                <Link href="/dashboard/leads">
-                  <Button variant="ghost" size="sm" className="gap-1 text-xs">
-                    View all
-                    <ArrowRight className="h-3 w-3" />
-                  </Button>
-                </Link>
-              </div>
-            </CardHeader>
-            <CardContent>
-              {stats?.recentLeads && stats.recentLeads.length > 0 ? (
-                <div className="space-y-3">
-                  {stats.recentLeads.map((lead) => (
-                    <div
-                      key={lead.id}
-                      className="flex items-center justify-between p-3 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors"
-                    >
-                      <div className="flex items-center gap-3">
-                        <div className="h-9 w-9 rounded-full bg-blue-100 flex items-center justify-center">
-                          <span className="text-sm font-semibold text-blue-700">
-                            {lead.firstName?.charAt(0) || "?"}
-                          </span>
-                        </div>
-                        <div>
-                          <p className="font-medium text-gray-900 text-sm">
-                            {lead.firstName} {lead.lastName}
-                          </p>
-                          <p className="text-xs text-gray-500">{lead.email}</p>
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <Badge
-                          variant={
-                            lead.status === "new"
-                              ? "default"
-                              : lead.status === "qualified"
-                              ? "success"
-                              : "secondary"
-                          }
-                          className="text-[10px]"
-                        >
-                          {lead.status}
-                        </Badge>
-                        {lead.community && (
-                          <p className="mt-1 text-xs text-gray-500">
-                            {lead.community.name}
-                          </p>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center py-8">
-                  <Users className="h-8 w-8 text-gray-300 mx-auto mb-2" />
-                  <p className="text-sm text-gray-500">
-                    No leads yet. Configure your AI Assistant to start capturing leads.
+        {/* Getting Started Section for New Users */}
+        {isNewUser && (
+          <Card className="border-2 border-blue-100 bg-gradient-to-br from-blue-50 to-indigo-50 overflow-hidden">
+            <CardContent className="p-0">
+              <div className="grid md:grid-cols-2 gap-0">
+                <div className="p-8">
+                  <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-100 text-blue-700 text-sm font-medium mb-4">
+                    <Zap className="h-4 w-4" />
+                    Quick Start Guide
+                  </div>
+                  <h2 className="text-2xl font-bold text-gray-900 mb-2">
+                    Let&apos;s get your AI tools set up
+                  </h2>
+                  <p className="text-gray-600 mb-6">
+                    Complete these steps to unlock the full power of your AI-powered builder platform.
+                    It only takes a few minutes!
                   </p>
+
+                  <div className="space-y-3">
+                    {quickActions.map((action, index) => {
+                      const isCompleted = stats && stats[action.checkKey as keyof typeof stats];
+                      return (
+                        <Link key={action.href} href={action.href}>
+                          <div className={`flex items-center gap-4 p-4 rounded-xl transition-all ${
+                            isCompleted
+                              ? "bg-white/50 opacity-60"
+                              : "bg-white shadow-sm hover:shadow-md hover:-translate-y-0.5"
+                          }`}>
+                            <div className={`flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br ${action.color} shadow-lg`}>
+                              {isCompleted ? (
+                                <CheckCircle className="h-5 w-5 text-white" />
+                              ) : (
+                                <action.icon className="h-5 w-5 text-white" />
+                              )}
+                            </div>
+                            <div className="flex-1">
+                              <p className={`font-medium ${isCompleted ? "text-gray-400 line-through" : "text-gray-900"}`}>
+                                {action.title}
+                              </p>
+                              <p className="text-sm text-gray-500">{action.description}</p>
+                            </div>
+                            <ChevronRight className={`h-5 w-5 ${isCompleted ? "text-gray-300" : "text-gray-400"}`} />
+                          </div>
+                        </Link>
+                      );
+                    })}
+                  </div>
                 </div>
-              )}
+
+                <div className="bg-gradient-to-br from-blue-600 to-indigo-700 p-8 flex flex-col justify-center text-white">
+                  <div className="mb-6">
+                    <BookOpen className="h-12 w-12 opacity-80 mb-4" />
+                    <h3 className="text-xl font-semibold mb-2">Need Help?</h3>
+                    <p className="text-blue-100">
+                      Our AI tools are designed to be easy to use. If you need assistance,
+                      check out our guides or contact support.
+                    </p>
+                  </div>
+                  <div className="flex gap-3">
+                    <Button variant="secondary" className="bg-white/20 hover:bg-white/30 text-white border-0">
+                      <Play className="h-4 w-4 mr-2" />
+                      Watch Tutorial
+                    </Button>
+                    <Button variant="secondary" className="bg-white/10 hover:bg-white/20 text-white border-white/20">
+                      <Mail className="h-4 w-4 mr-2" />
+                      Get Help
+                    </Button>
+                  </div>
+                </div>
+              </div>
             </CardContent>
           </Card>
+        )}
 
-          {/* Recent Research */}
-          <Card>
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-base">Recent Research</CardTitle>
-                <Link href="/dashboard/research/footprint">
-                  <Button variant="ghost" size="sm" className="gap-1 text-xs">
-                    View all
-                    <ArrowRight className="h-3 w-3" />
-                  </Button>
-                </Link>
-              </div>
-            </CardHeader>
-            <CardContent>
-              {stats?.recentResearch && stats.recentResearch.length > 0 ? (
-                <div className="space-y-3">
-                  {stats.recentResearch.map((report) => (
-                    <div
-                      key={report.id}
-                      className="flex items-center justify-between p-3 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors"
-                    >
-                      <div className="flex items-center gap-3">
-                        <ResearchIcon type={report.type} status={report.status} />
-                        <div>
-                          <p className="font-medium text-gray-900 text-sm truncate max-w-[200px]">
-                            {report.title}
-                          </p>
-                          <p className="text-xs text-gray-500 capitalize">
-                            {report.type.replace("_", " ")}
-                          </p>
-                        </div>
-                      </div>
-                      <ResearchStatusBadge status={report.status} />
+        {/* Stats Grid - Show for existing users */}
+        {!isNewUser && (
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+            <StatCard
+              title="Communities"
+              value={stats?.communities || 0}
+              description="Active communities"
+              icon={Building2}
+              href="/dashboard/communities"
+              color="emerald"
+            />
+            <StatCard
+              title="Total Leads"
+              value={stats?.leads || 0}
+              description="From AI Assistant"
+              icon={Users}
+              href="/dashboard/leads"
+              color="blue"
+              highlight={stats?.leads && stats.leads > 0}
+            />
+            <StatCard
+              title="Conversations"
+              value={stats?.conversations || 0}
+              description="Chat sessions"
+              icon={MessageSquare}
+              href="/dashboard/assistant"
+              color="violet"
+            />
+            <StatCard
+              title="Research Reports"
+              value={stats?.researchReports || 0}
+              description="Completed analyses"
+              icon={Activity}
+              href="/dashboard/research/footprint"
+              color="teal"
+            />
+          </div>
+        )}
+
+        {/* Feature Cards Section */}
+        <div>
+          <div className="flex items-center justify-between mb-5">
+            <div>
+              <h2 className="text-xl font-bold text-gray-900">AI-Powered Tools</h2>
+              <p className="text-gray-500 text-sm mt-1">
+                Everything you need to market, sell, and grow your home building business
+              </p>
+            </div>
+          </div>
+
+          <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-4">
+            {featureCards.map((feature) => (
+              <Link key={feature.href} href={feature.href} className="group">
+                <Card className="h-full transition-all duration-300 hover:shadow-xl hover:-translate-y-1 border-0 shadow-md overflow-hidden">
+                  <div className={`h-2 bg-gradient-to-r ${feature.gradient}`} />
+                  <CardContent className="p-5">
+                    <div className={`inline-flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br ${feature.gradient} shadow-lg mb-4`}>
+                      <feature.icon className="h-6 w-6 text-white" />
                     </div>
-                  ))}
+                    <h3 className="font-semibold text-gray-900 mb-2 group-hover:text-blue-600 transition-colors">
+                      {feature.title}
+                    </h3>
+                    <p className="text-sm text-gray-500 mb-4">
+                      {feature.description}
+                    </p>
+                    <div className="space-y-1.5">
+                      {feature.benefits.map((benefit) => (
+                        <div key={benefit} className="flex items-center gap-2 text-xs text-gray-600">
+                          <CheckCircle className="h-3.5 w-3.5 text-green-500" />
+                          {benefit}
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              </Link>
+            ))}
+          </div>
+        </div>
+
+        {/* Quick Access Grid */}
+        <div className="grid gap-4 md:grid-cols-3">
+          <Link href="/dashboard/competitors" className="group">
+            <Card className="h-full transition-all hover:shadow-lg hover:border-orange-200">
+              <CardContent className="p-5 flex items-center gap-4">
+                <div className="h-12 w-12 rounded-xl bg-orange-100 flex items-center justify-center group-hover:bg-orange-500 transition-colors">
+                  <Target className="h-6 w-6 text-orange-600 group-hover:text-white transition-colors" />
                 </div>
-              ) : (
-                <div className="text-center py-8">
-                  <Activity className="h-8 w-8 text-gray-300 mx-auto mb-2" />
-                  <p className="text-sm text-gray-500">
-                    No research yet. Start your first deep research analysis.
-                  </p>
-                  <Link href="/dashboard/research/footprint">
-                    <Button size="sm" className="mt-3">
-                      Start Research
+                <div>
+                  <h3 className="font-semibold text-gray-900">Competitive Intelligence</h3>
+                  <p className="text-sm text-gray-500">Track competitor pricing & features</p>
+                </div>
+                <ArrowRight className="h-5 w-5 text-gray-300 ml-auto group-hover:text-orange-500 transition-colors" />
+              </CardContent>
+            </Card>
+          </Link>
+
+          <Link href="/dashboard/crm" className="group">
+            <Card className="h-full transition-all hover:shadow-lg hover:border-cyan-200">
+              <CardContent className="p-5 flex items-center gap-4">
+                <div className="h-12 w-12 rounded-xl bg-cyan-100 flex items-center justify-center group-hover:bg-cyan-500 transition-colors">
+                  <Link2 className="h-6 w-6 text-cyan-600 group-hover:text-white transition-colors" />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-gray-900">CRM Integration</h3>
+                  <p className="text-sm text-gray-500">Connect HubSpot, Salesforce, GHL</p>
+                </div>
+                <ArrowRight className="h-5 w-5 text-gray-300 ml-auto group-hover:text-cyan-500 transition-colors" />
+              </CardContent>
+            </Card>
+          </Link>
+
+          <Link href="/dashboard/realtors" className="group">
+            <Card className="h-full transition-all hover:shadow-lg hover:border-indigo-200">
+              <CardContent className="p-5 flex items-center gap-4">
+                <div className="h-12 w-12 rounded-xl bg-indigo-100 flex items-center justify-center group-hover:bg-indigo-500 transition-colors">
+                  <Users className="h-6 w-6 text-indigo-600 group-hover:text-white transition-colors" />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-gray-900">Realtor Portal</h3>
+                  <p className="text-sm text-gray-500">Manage agent access & resources</p>
+                </div>
+                <ArrowRight className="h-5 w-5 text-gray-300 ml-auto group-hover:text-indigo-500 transition-colors" />
+              </CardContent>
+            </Card>
+          </Link>
+        </div>
+
+        {/* Recent Activity Section - Only for users with data */}
+        {!isNewUser && (
+          <div className="grid gap-6 lg:grid-cols-2">
+            {/* Recent Leads */}
+            <Card className="shadow-sm">
+              <CardHeader className="pb-3">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle className="text-base font-semibold">Recent Leads</CardTitle>
+                    <CardDescription className="text-xs">Latest inquiries from your AI assistant</CardDescription>
+                  </div>
+                  <Link href="/dashboard/leads">
+                    <Button variant="ghost" size="sm" className="gap-1 text-xs text-blue-600 hover:text-blue-800">
+                      View all
+                      <ArrowRight className="h-3 w-3" />
                     </Button>
                   </Link>
                 </div>
-              )}
-            </CardContent>
-          </Card>
-        </div>
+              </CardHeader>
+              <CardContent>
+                {stats?.recentLeads && stats.recentLeads.length > 0 ? (
+                  <div className="space-y-2">
+                    {stats.recentLeads.map((lead) => (
+                      <div
+                        key={lead.id}
+                        className="flex items-center justify-between p-3 rounded-lg bg-gray-50/80 hover:bg-gray-100 transition-colors"
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="h-10 w-10 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center shadow-sm">
+                            <span className="text-sm font-semibold text-white">
+                              {lead.firstName?.charAt(0) || lead.email?.charAt(0) || "?"}
+                            </span>
+                          </div>
+                          <div>
+                            <p className="font-medium text-gray-900 text-sm">
+                              {lead.firstName || lead.lastName
+                                ? `${lead.firstName || ""} ${lead.lastName || ""}`.trim()
+                                : lead.email || "Anonymous"}
+                            </p>
+                            <p className="text-xs text-gray-500">
+                              {lead.community?.name || "General Inquiry"}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          {lead.score >= 70 && (
+                            <div className="flex items-center gap-1 text-amber-500">
+                              <Star className="h-3.5 w-3.5 fill-current" />
+                              <span className="text-xs font-medium">Hot</span>
+                            </div>
+                          )}
+                          <LeadStatusBadge status={lead.status} />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <EmptyState
+                    icon={Users}
+                    title="No leads yet"
+                    description="Set up your AI chatbot to start capturing leads automatically"
+                    href="/dashboard/assistant"
+                    buttonText="Configure Chatbot"
+                  />
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Recent Research */}
+            <Card className="shadow-sm">
+              <CardHeader className="pb-3">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle className="text-base font-semibold">Research Reports</CardTitle>
+                    <CardDescription className="text-xs">AI-powered insights and analysis</CardDescription>
+                  </div>
+                  <Link href="/dashboard/research/footprint">
+                    <Button variant="ghost" size="sm" className="gap-1 text-xs text-blue-600 hover:text-blue-800">
+                      New research
+                      <ArrowRight className="h-3 w-3" />
+                    </Button>
+                  </Link>
+                </div>
+              </CardHeader>
+              <CardContent>
+                {stats?.recentResearch && stats.recentResearch.length > 0 ? (
+                  <div className="space-y-2">
+                    {stats.recentResearch.map((report) => (
+                      <div
+                        key={report.id}
+                        className="flex items-center justify-between p-3 rounded-lg bg-gray-50/80 hover:bg-gray-100 transition-colors"
+                      >
+                        <div className="flex items-center gap-3">
+                          <ResearchIcon type={report.type} status={report.status} />
+                          <div>
+                            <p className="font-medium text-gray-900 text-sm truncate max-w-[200px]">
+                              {report.title}
+                            </p>
+                            <p className="text-xs text-gray-500 capitalize">
+                              {report.type.replace(/_/g, " ")}
+                            </p>
+                          </div>
+                        </div>
+                        <ResearchStatusBadge status={report.status} />
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <EmptyState
+                    icon={Search}
+                    title="No research yet"
+                    description="Start with a digital footprint analysis to see how you appear online"
+                    href="/dashboard/research/footprint"
+                    buttonText="Start Research"
+                  />
+                )}
+              </CardContent>
+            </Card>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -437,35 +566,90 @@ function StatCard({
   value,
   description,
   icon: Icon,
-  trend,
+  href,
+  color,
+  highlight,
 }: {
   title: string;
   value: number;
   description: string;
   icon: React.ElementType;
-  trend?: string;
+  href: string;
+  color: "emerald" | "blue" | "violet" | "teal";
+  highlight?: boolean;
+}) {
+  const colors = {
+    emerald: "bg-emerald-50 text-emerald-600 group-hover:bg-emerald-500",
+    blue: "bg-blue-50 text-blue-600 group-hover:bg-blue-500",
+    violet: "bg-violet-50 text-violet-600 group-hover:bg-violet-500",
+    teal: "bg-teal-50 text-teal-600 group-hover:bg-teal-500",
+  };
+
+  return (
+    <Link href={href} className="group">
+      <Card className={`transition-all hover:shadow-lg ${highlight ? "ring-2 ring-blue-200" : ""}`}>
+        <CardContent className="p-5">
+          <div className="flex items-start justify-between">
+            <div>
+              <p className="text-sm font-medium text-gray-500">{title}</p>
+              <p className="text-3xl font-bold text-gray-900 mt-1">{value}</p>
+              <p className="text-xs text-gray-500 mt-1">{description}</p>
+            </div>
+            <div className={`h-11 w-11 rounded-xl flex items-center justify-center transition-colors ${colors[color]} group-hover:text-white`}>
+              <Icon className="h-5 w-5" />
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    </Link>
+  );
+}
+
+function EmptyState({
+  icon: Icon,
+  title,
+  description,
+  href,
+  buttonText,
+}: {
+  icon: React.ElementType;
+  title: string;
+  description: string;
+  href: string;
+  buttonText: string;
 }) {
   return (
-    <Card>
-      <CardContent className="p-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-sm font-medium text-gray-500">{title}</p>
-            <p className="text-3xl font-bold text-gray-900 mt-1">{value}</p>
-            <p className="text-xs text-gray-500 mt-1">{description}</p>
-            {trend && (
-              <p className="text-xs text-green-600 mt-2 flex items-center gap-1">
-                <TrendingUp className="h-3 w-3" />
-                {trend}
-              </p>
-            )}
-          </div>
-          <div className="h-12 w-12 rounded-full bg-gray-100 flex items-center justify-center">
-            <Icon className="h-6 w-6 text-gray-600" />
-          </div>
-        </div>
-      </CardContent>
-    </Card>
+    <div className="text-center py-8 px-4">
+      <div className="h-12 w-12 rounded-full bg-gray-100 flex items-center justify-center mx-auto mb-3">
+        <Icon className="h-6 w-6 text-gray-400" />
+      </div>
+      <h3 className="font-medium text-gray-900 mb-1">{title}</h3>
+      <p className="text-sm text-gray-500 mb-4 max-w-[200px] mx-auto">
+        {description}
+      </p>
+      <Link href={href}>
+        <Button size="sm" variant="outline">
+          {buttonText}
+        </Button>
+      </Link>
+    </div>
+  );
+}
+
+function LeadStatusBadge({ status }: { status: string }) {
+  const styles: Record<string, string> = {
+    new: "bg-blue-100 text-blue-700",
+    contacted: "bg-yellow-100 text-yellow-700",
+    qualified: "bg-purple-100 text-purple-700",
+    nurturing: "bg-orange-100 text-orange-700",
+    closed_won: "bg-green-100 text-green-700",
+    closed_lost: "bg-gray-100 text-gray-700",
+  };
+
+  return (
+    <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium ${styles[status] || styles.new}`}>
+      {status.replace("_", " ")}
+    </span>
   );
 }
 
@@ -485,8 +669,8 @@ function ResearchIcon({ type, status }: { type: string; status: string }) {
   };
 
   return (
-    <div className={`h-9 w-9 rounded-lg flex items-center justify-center ${colors[status]}`}>
-      <Icon className="h-4 w-4" />
+    <div className={`h-10 w-10 rounded-xl flex items-center justify-center ${colors[status]}`}>
+      <Icon className="h-5 w-5" />
     </div>
   );
 }
@@ -495,30 +679,30 @@ function ResearchStatusBadge({ status }: { status: string }) {
   switch (status) {
     case "completed":
       return (
-        <Badge className="bg-green-100 text-green-700 hover:bg-green-100 text-[10px]">
-          <CheckCircle className="h-3 w-3 mr-1" />
+        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-green-100 text-green-700 text-[10px] font-medium">
+          <CheckCircle className="h-3 w-3" />
           Done
-        </Badge>
+        </span>
       );
     case "in_progress":
       return (
-        <Badge className="bg-blue-100 text-blue-700 hover:bg-blue-100 text-[10px]">
-          <Clock className="h-3 w-3 mr-1 animate-spin" />
+        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 text-[10px] font-medium">
+          <Clock className="h-3 w-3 animate-spin" />
           Running
-        </Badge>
+        </span>
       );
     case "failed":
       return (
-        <Badge className="bg-red-100 text-red-700 hover:bg-red-100 text-[10px]">
-          <AlertCircle className="h-3 w-3 mr-1" />
+        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-red-100 text-red-700 text-[10px] font-medium">
+          <AlertCircle className="h-3 w-3" />
           Failed
-        </Badge>
+        </span>
       );
     default:
       return (
-        <Badge variant="secondary" className="text-[10px]">
+        <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-gray-100 text-gray-700 text-[10px] font-medium">
           Pending
-        </Badge>
+        </span>
       );
   }
 }
