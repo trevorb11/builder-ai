@@ -326,7 +326,7 @@ export default async function DashboardPage() {
               icon={Users}
               href="/dashboard/leads"
               color="blue"
-              highlight={stats?.leads && stats.leads > 0}
+              highlight={stats?.leads !== undefined && stats.leads > 0}
             />
             <StatCard
               title="Conversations"

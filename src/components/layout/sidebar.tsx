@@ -24,6 +24,8 @@ import {
   HelpCircle,
   ChevronRight,
   Zap,
+  Package,
+  Gift,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -177,6 +179,22 @@ const navSections: NavSection[] = [
         href: "/dashboard/floorplans",
         icon: Home,
         description: "Your floorplan catalog",
+      },
+      {
+        name: "Inventory Homes",
+        href: "/dashboard/inventory",
+        icon: Package,
+        description: "Move-in ready homes",
+        isNew: true,
+        color: "text-orange-500",
+      },
+      {
+        name: "Incentives",
+        href: "/dashboard/incentives",
+        icon: Gift,
+        description: "Promotions & offers",
+        isNew: true,
+        color: "text-pink-500",
       },
       {
         name: "Leads",

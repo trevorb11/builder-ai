@@ -2,11 +2,13 @@
 
 import { useState } from "react";
 import { signIn } from "next-auth/react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Sparkles, CheckCircle } from "lucide-react";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -14,6 +16,8 @@ export default function LoginPage() {
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const justRegistered = searchParams.get("registered") === "true";
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -41,11 +45,11 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gray-50 px-4">
+    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-slate-900 via-blue-900 to-indigo-900 px-4">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
-          <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-blue-600 text-xl font-bold text-white">
-            B
+          <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-indigo-500">
+            <Sparkles className="h-7 w-7 text-white" />
           </div>
           <CardTitle className="text-2xl">Welcome to Builder AI</CardTitle>
           <CardDescription>
@@ -53,6 +57,12 @@ export default function LoginPage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
+          {justRegistered && (
+            <div className="mb-4 rounded-lg bg-green-50 border border-green-200 p-3 text-sm text-green-700 flex items-center gap-2">
+              <CheckCircle className="h-4 w-4" />
+              Account created successfully! Please sign in.
+            </div>
+          )}
           <form onSubmit={handleSubmit} className="space-y-4">
             {error && (
               <div className="rounded-md bg-red-50 p-3 text-sm text-red-600">
@@ -85,10 +95,17 @@ export default function LoginPage() {
               {isLoading ? "Signing in..." : "Sign in"}
             </Button>
           </form>
-          <div className="mt-6 text-center text-sm text-gray-500">
-            <p>
-              Demo credentials: demo@builder.ai / demo123
+
+          <div className="mt-6 text-center">
+            <p className="text-sm text-gray-500 mb-3">
+              Don&apos;t have an account?{" "}
+              <Link href="/register" className="text-blue-600 hover:underline font-medium">
+                Create one
+              </Link>
             </p>
+            <div className="text-xs text-gray-400 border-t pt-3">
+              Demo: demo@builder.ai / demo123
+            </div>
           </div>
         </CardContent>
       </Card>

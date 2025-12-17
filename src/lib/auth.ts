@@ -1,5 +1,6 @@
 import NextAuth from "next-auth";
 import Credentials from "next-auth/providers/credentials";
+import bcrypt from "bcryptjs";
 import { prisma } from "./db";
 import { z } from "zod";
 
@@ -28,9 +29,8 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
 
         if (!user || !user.password) return null;
 
-        // In production, use bcrypt to compare passwords
-        // For demo purposes, we're doing a simple comparison
-        const isValid = user.password === password;
+        // Compare password using bcrypt
+        const isValid = await bcrypt.compare(password, user.password);
         if (!isValid) return null;
 
         return {
@@ -72,6 +72,11 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     strategy: "jwt",
   },
 });
+
+// Helper function to hash passwords
+export async function hashPassword(password: string): Promise<string> {
+  return bcrypt.hash(password, 12);
+}
 
 // Extend the types for NextAuth
 declare module "next-auth" {
