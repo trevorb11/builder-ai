@@ -9,7 +9,6 @@ channel = "stable-25_05"
 [userenv]
 
 [userenv.shared]
-DATABASE_URL = "file:./dev.db"
 AUTH_SECRET = "zyN20Mb6MA9DkqSew/Urz/7QPIxg8stdT/qTYK+U2Pk="
 NEXT_PUBLIC_APP_URL = "https://74e84888-420e-47c4-ba2e-86f97ce24ead-00-g76eny8ho1eo.janeway.replit.dev"
 

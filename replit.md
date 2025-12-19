@@ -63,11 +63,13 @@ Preferred communication style: Simple, everyday language.
 ### Data Storage
 
 **Database**
-- Prisma ORM for type-safe database access
-- LibSQL (Turso) adapter for edge-compatible SQLite
+- Prisma 7 ORM for type-safe database access
+- PostgreSQL database via Replit's built-in database service
+- Uses `@prisma/adapter-pg` driver adapter with `pg` connection pool
 - Generated Prisma client in `/src/generated/prisma/`
 - Database schema managed through Prisma migrations
 - Seeding script for development data (`prisma/seed.ts`)
+- Configuration in `prisma.config.ts` for Prisma 7 compatibility
 
 **Data Models**
 The schema includes 30+ models organized into functional domains:
