@@ -15,7 +15,7 @@ import {
   History,
 } from "lucide-react";
 
-const contentTypes = [
+const contentTypesWithIcons = [
   {
     id: "social_post",
     name: "Social Media",
@@ -53,6 +53,8 @@ const contentTypes = [
     description: "Agent communications",
   },
 ];
+
+const contentTypes = contentTypesWithIcons.map(({ icon, ...rest }) => rest);
 
 async function getMarketingData(organizationId: string) {
   const [recentContent, communities, floorplans] = await Promise.all([
@@ -119,15 +121,16 @@ export default async function MarketingPage() {
 
       {/* Content Type Stats */}
       <div className="mb-8 grid gap-4 md:grid-cols-3 lg:grid-cols-6">
-        {contentTypes.map((type) => {
+        {contentTypesWithIcons.map((type) => {
           const count =
             contentStats.find((s) => s.type === type.id)?._count || 0;
+          const IconComponent = type.icon;
           return (
             <Card key={type.id}>
               <CardContent className="p-4">
                 <div className="flex items-center gap-3">
                   <div className="rounded-lg bg-gray-100 p-2">
-                    <type.icon className="h-4 w-4 text-gray-600" />
+                    <IconComponent className="h-4 w-4 text-gray-600" />
                   </div>
                   <div>
                     <p className="text-sm font-medium text-gray-900">{type.name}</p>
