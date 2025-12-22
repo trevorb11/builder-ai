@@ -24,6 +24,7 @@ import {
   BarChart3,
   HelpCircle,
   ChevronRight,
+  ClipboardCheck,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -68,6 +69,13 @@ const navSections: NavSection[] = [
         href: "/dashboard",
         icon: LayoutGrid,
         description: "Overview & metrics",
+      },
+      {
+        name: "Onboarding",
+        href: "/dashboard/onboarding",
+        icon: ClipboardCheck,
+        description: "Setup checklist",
+        color: "text-green-500",
       },
     ],
   },
