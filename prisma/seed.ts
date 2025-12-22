@@ -1,7 +1,12 @@
 import { PrismaClient } from "../src/generated/prisma/client";
+import bcrypt from "bcryptjs";
 
 // @ts-expect-error Prisma 7 strict constructor
 const prisma = new PrismaClient();
+
+async function hashPassword(password: string): Promise<string> {
+  return bcrypt.hash(password, 12);
+}
 
 async function main() {
   console.log("Starting seed...");
@@ -60,12 +65,13 @@ async function main() {
 
   console.log("Created organization:", organization.name);
 
-  // Create demo user
+  // Create demo user with hashed password
+  const hashedPassword = await hashPassword("demo123");
   const user = await prisma.user.create({
     data: {
       email: "demo@builder.ai",
       name: "Demo User",
-      password: "demo123", // In production, use bcrypt
+      password: hashedPassword,
       role: "builder_admin",
       organizationId: organization.id,
     },
