@@ -1,6 +1,7 @@
 import { PrismaClient } from "../src/generated/prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { Pool } from "pg";
+import bcrypt from "bcryptjs";
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
@@ -66,12 +67,13 @@ async function main() {
 
   console.log("Created organization:", organization.name);
 
-  // Create demo user
+  // Create demo user with hashed password
+  const hashedPassword = await bcrypt.hash("demo123", 12);
   const user = await prisma.user.create({
     data: {
       email: "demo@builder.ai",
       name: "Demo User",
-      password: "demo123", // In production, use bcrypt
+      password: hashedPassword,
       role: "builder_admin",
       organizationId: organization.id,
     },
