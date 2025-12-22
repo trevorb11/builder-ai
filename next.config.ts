@@ -1,7 +1,8 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  // Exclude Prisma from bundling to avoid Turbopack issues
+  serverExternalPackages: ["@prisma/client"],
 };
 
 export default nextConfig;

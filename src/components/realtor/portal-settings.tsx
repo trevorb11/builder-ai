@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Loader2 } from "lucide-react";
-import type { RealtorPortalConfig } from "@/generated/prisma/client";
+import type { RealtorPortalConfig } from "@prisma/client";
 
 interface RealtorPortalSettingsProps {
   config: RealtorPortalConfig | null;
