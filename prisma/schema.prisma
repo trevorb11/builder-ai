@@ -117,6 +117,9 @@ model Organization {
   digitalFootprintConfig DigitalFootprintConfig?
   contentStrategyConfig  ContentStrategyConfig?
   contentTopics          ContentTopic[]
+  
+  // Onboarding
+  onboardingProgress     OnboardingProgress?
 
   @@index([slug])
 }
@@ -765,4 +768,76 @@ model ContentTopic {
   @@index([category])
   @@index([status])
   @@index([priority])
+}
+
+// ==========================================
+// ONBOARDING PROGRESS
+// ==========================================
+
+model OnboardingProgress {
+  id                String   @id @default(cuid())
+  
+  // Section 1: Company & Brand Basics
+  companyName       Boolean  @default(false)
+  contacts          Boolean  @default(false)
+  websiteUrl        Boolean  @default(false)
+  tagline           Boolean  @default(false)
+  buyerPersonas     Boolean  @default(false)
+  marketsServed     Boolean  @default(false)
+  differentiators   Boolean  @default(false)
+  brandAssets       Boolean  @default(false)
+  
+  // Section 2: Community Info
+  communitiesAdded  Boolean  @default(false)
+  
+  // Section 3: Floorplan Data
+  floorplansAdded   Boolean  @default(false)
+  
+  // Section 4: Pricing & Incentives
+  incentivesAdded   Boolean  @default(false)
+  coopCommission    Boolean  @default(false)
+  preferredLender   Boolean  @default(false)
+  pricingContacts   Boolean  @default(false)
+  inventoryAdded    Boolean  @default(false)
+  
+  // Section 5: CRM + Systems
+  crmConnected      Boolean  @default(false)
+  leadFlowSetup     Boolean  @default(false)
+  salesTeamAdded    Boolean  @default(false)
+  
+  // Section 6: Website + Technical
+  websiteAccess     Boolean  @default(false)
+  analyticsAccess   Boolean  @default(false)
+  chatbotPlacement  Boolean  @default(false)
+  
+  // Section 7: Competitive Intelligence
+  competitorsAdded  Boolean  @default(false)
+  
+  // Section 8: Sales Training (optional)
+  salesAgentsAdded  Boolean  @default(false)
+  trainingAssets    Boolean  @default(false)
+  
+  // Section 9: Realtor Portal (optional)
+  realtorDatabase   Boolean  @default(false)
+  realtorAssets     Boolean  @default(false)
+  
+  // Section 10: Content + Marketing
+  socialHandles     Boolean  @default(false)
+  emailPlatform     Boolean  @default(false)
+  contentPrefs      Boolean  @default(false)
+  
+  // Section 11: Approvals + Launch
+  approvalContacts  Boolean  @default(false)
+  launchDate        Boolean  @default(false)
+  
+  // Progress tracking
+  overallProgress   Int      @default(0) // 0-100 percentage
+  completedAt       DateTime?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  organizationId String       @unique
+  
+  @@index([organizationId])
 }

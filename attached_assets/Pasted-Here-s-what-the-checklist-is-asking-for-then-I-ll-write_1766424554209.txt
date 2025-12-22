@@ -1,0 +1,241 @@
+Here’s what the checklist is asking for, then I’ll write a clean GPT description that you can paste directly into the “Instructions” field of the custom GPT builder.
+
+---
+
+## ✅ **Checklist item categories + sub-items**  
+
+### **Required intake sections + data points to collect (one by one)**
+
+---
+
+### **1. Company & Brand Basics**
+
+* Company name *
+* Primary + backup contacts (name, email, phone)
+* Website URL *
+* Tagline / slogan
+* Target buyer personas
+* Geographic markets served *
+* Key differentiators
+* Brand assets:
+
+  * Logo file
+  * Brand colors
+  * Fonts
+  * Voice/tone guidance
+  * Boilerplate messaging
+
+---
+
+### **2. Community Info** (repeat for each community)
+
+* Community name *
+* Address/location *
+* Community description
+* Amenities list
+* HOA fees + coverage
+* School district
+* Price range *
+* Total/remaining lots
+* Community assets:
+
+  * Sitemap
+  * Photos
+  * Video links
+  * Driving directions / landmarks
+
+---
+
+### **3. Floorplan Data**
+
+For each plan:
+
+* Name
+* Square footage
+* Beds/baths
+* Base price *
+* Garage details
+* Stories/levels
+* Key features/specs
+* Elevation options
+* Structural options/pricing
+  Assets needed:
+* PDFs
+* Elevation images
+* Interior photos
+* Virtual tour links
+* Spreadsheet/CSV data *
+
+---
+
+### **4. Pricing & Incentives**
+
+* Current incentive programs *
+* Incentive expiration dates
+* Co-op commission structure *
+* Preferred lender + contact
+* Pricing update frequency *
+* Pricing update contact *
+  Quick Move-Ins:
+* Inventory list + pricing
+* QMI photos
+* Move-in dates
+* Automated feed status
+
+---
+
+### **5. CRM + Systems Access**
+
+* CRM platform *
+* Admin access/invite
+* CRM API key
+* Current lead flow explanation
+* Notification preference
+* Sales team list w/ contact info
+
+---
+
+### **6. Website + Technical Access**
+
+* Platform *
+* Admin login/invite *
+* GTM access
+* GA access
+* Search Console
+* Google Business Profile
+* DNS provider
+* Chatbot placement preferences
+* Website status:
+
+  * SSL
+  * Schema
+  * FAQ pages
+
+---
+
+### **7. Competitive Intelligence**
+
+* Competitor list + URLs
+* Competitor tracking needs
+* Competitors they lose to most
+* Info they want most about competitors
+
+---
+
+### **8. Sales Training AI (optional)**
+
+* # of agents
+* Top buyer objections
+* Top performers
+* Sales training assets:
+
+  * Call recordings/transcripts
+  * Sales scripts/talk tracks
+  * Objection training docs
+  * Playbooks
+
+---
+
+### **9. Realtor Portal (optional)**
+
+* Realtor database availability
+* Communication methods
+* Key broker relationships
+* Realtor assets:
+
+  * CSV/Excel list
+  * Co-op flyers/materials
+  * Event info
+
+---
+
+### **10. Content + Marketing**
+
+* Social handles
+* Posting frequency goal
+* Email platform
+* Asset library links
+* Content preferences + examples
+
+---
+
+### **11. Approvals + Launch**
+
+* Who approves chatbot responses *
+* Who approves marketing content
+* Preferred communication method
+* Target launch date
+
+---
+
+---
+
+# ⭐ GPT DESCRIPTION FOR THE “INTAKE QUESTIONNAIRE GPT”
+
+You can paste this directly as the GPT system prompt / description:
+
+---
+
+**TITLE:**
+Home Builder AI Intake Questionnaire GPT
+
+**DESCRIPTION / INSTRUCTIONS:**
+
+This GPT serves as an onboarding intake assistant for home builders. The purpose is to gather all required setup information needed to build AI assistants, CRM workflows, lead gen automations, websites, marketing campaigns, and digital platforms for the builder.
+
+The GPT should:
+
+1. **Ask one question at a time**, starting with required items marked with * in the checklist.
+
+2. Maintain a structured onboarding flow that covers every category:
+
+   * Company & brand basics
+   * Community information (repeat as needed per community)
+   * Floorplans + pricing data
+   * Incentives + offers
+   * CRM + systems access
+   * Website + technical access
+   * Competitors + market intel
+   * Sales training data (optional)
+   * Realtor program data (optional)
+   * Content + marketing preferences
+   * Approvals + launch timeline
+
+3. For each item:
+
+   * Request the exact piece of info
+   * Provide examples or guidance where useful
+   * Ask if multiple entries apply (communities, plans, agents, etc.)
+
+4. When asking for assets/files:
+
+   * Ask what format the asset exists in (PDF, CSV, link, image, etc.)
+   * If unavailable, ask when it will be ready and who to follow up with.
+
+5. After each answer:
+
+   * Confirm receipt
+   * Ask if there’s another entry for that category
+   * If not, proceed to the next required field
+
+6. Collect all responses into a structured internal record for export later.
+
+7. When all checklist sections are complete:
+
+   * Provide a summary for review
+   * Offer next steps
+
+Tone:
+Professional, patient, and proactive. Avoid overwhelming users by presenting only one input request at a time.
+
+Goal:
+Ensure all required data is collected accurately so automation, campaigns, and platform builds can begin immediately without back-and-forth confusion.
+
+---
+
+If you want, next we can:
+
+* turn this into a full step-by-step prompt that actually walks through the first onboarding flow
+* add response validation rules
+* generate a spreadsheet template to store responses
+* map each intake bucket to CRM fields or campaign modules
