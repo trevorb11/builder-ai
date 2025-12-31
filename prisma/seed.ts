@@ -1,7 +1,6 @@
-import { PrismaClient } from "../src/generated/prisma/client";
+import { PrismaClient } from "@prisma/client";
 import bcrypt from "bcryptjs";
 
-// @ts-expect-error Prisma 7 strict constructor
 const prisma = new PrismaClient();
 
 async function hashPassword(password: string): Promise<string> {
