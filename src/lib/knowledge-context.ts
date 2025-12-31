@@ -1,5 +1,8 @@
 import { prisma } from "@/lib/db";
 
+// Feature types for context filtering
+export type FeatureType = "chatbot" | "sales_training" | "marketing" | "research" | "all";
+
 export interface BuilderContext {
   company: {
     name: string;
@@ -76,12 +79,24 @@ export interface BuilderContext {
     value: string;
     metadata?: Record<string, unknown>;
   }>;
+  documents: Array<{
+    name: string;
+    category: string;
+    summary?: string;
+    keyPoints?: string[];
+  }>;
 }
 
 /**
  * Fetches and aggregates all builder knowledge for AI context
  */
-export async function getBuilderContext(organizationId: string): Promise<BuilderContext> {
+export async function getBuilderContext(
+  organizationId: string,
+  options?: { feature?: FeatureType; includeDocuments?: boolean }
+): Promise<BuilderContext> {
+  const feature = options?.feature || "all";
+  const includeDocuments = options?.includeDocuments !== false;
+
   // Fetch organization with all related data
   const organization = await prisma.organization.findUnique({
     where: { id: organizationId },
@@ -109,6 +124,15 @@ export async function getBuilderContext(organizationId: string): Promise<Builder
         where: { isActive: true },
         orderBy: { priority: "desc" },
       },
+      documents: includeDocuments
+        ? {
+            where: {
+              isActive: true,
+              status: "ready",
+            },
+            orderBy: { priority: "desc" },
+          }
+        : undefined,
     },
   });
 
@@ -119,6 +143,16 @@ export async function getBuilderContext(organizationId: string): Promise<Builder
   const profile = organization.onboarding?.companyProfile;
   const salesConfig = organization.onboarding?.salesConfig;
   const contentPrefs = organization.onboarding?.contentPrefs;
+
+  // Filter documents by target feature
+  let filteredDocs = organization.documents || [];
+  if (feature !== "all" && includeDocuments) {
+    filteredDocs = filteredDocs.filter((doc) => {
+      if (!doc.targetFeatures) return true;
+      const targets = JSON.parse(doc.targetFeatures);
+      return targets.includes("all") || targets.includes(feature);
+    });
+  }
 
   // Build the context object
   const context: BuilderContext = {
@@ -204,6 +238,12 @@ export async function getBuilderContext(organizationId: string): Promise<Builder
       value: k.value,
       metadata: k.metadata ? JSON.parse(k.metadata) : undefined,
     })),
+    documents: filteredDocs.map((d) => ({
+      name: d.name,
+      category: d.category,
+      summary: d.summary || undefined,
+      keyPoints: d.keyPoints ? JSON.parse(d.keyPoints) : undefined,
+    })),
   };
 
   return context;
@@ -212,12 +252,18 @@ export async function getBuilderContext(organizationId: string): Promise<Builder
 /**
  * Generates a formatted context string for AI prompts
  */
-export async function getBuilderContextPrompt(organizationId: string): Promise<string> {
-  const context = await getBuilderContext(organizationId);
+export async function getBuilderContextPrompt(
+  organizationId: string,
+  options?: { feature?: FeatureType; maxLength?: number }
+): Promise<string> {
+  const feature = options?.feature || "all";
+  const maxLength = options?.maxLength || 12000;
+
+  const context = await getBuilderContext(organizationId, { feature });
 
   const sections: string[] = [];
 
-  // Company overview
+  // Company overview (always include)
   sections.push(`## Company Overview
 - Name: ${context.company.name}
 ${context.company.tagline ? `- Tagline: ${context.company.tagline}` : ""}
@@ -233,8 +279,8 @@ ${context.company.website ? `- Website: ${context.company.website}` : ""}
 ${context.company.phone ? `- Phone: ${context.company.phone}` : ""}
 ${context.company.email ? `- Email: ${context.company.email}` : ""}`);
 
-  // Communities
-  if (context.communities.length > 0) {
+  // Communities (for chatbot, sales, marketing)
+  if (["chatbot", "sales_training", "marketing", "all"].includes(feature) && context.communities.length > 0) {
     sections.push(`## Communities\n${context.communities.map((c) => `
 ### ${c.name}
 - Location: ${c.city ? `${c.city}, ` : ""}${c.state || ""}
@@ -253,9 +299,10 @@ ${c.incentives.length > 0 ? `**Current Incentives:**
 ${c.incentives.map((i) => `- ${i.title}: ${i.description}${i.value ? ` (${i.value})` : ""}`).join("\n")}` : ""}`).join("\n")}`);
   }
 
-  // Sales info
-  if (context.sales.uniqueSellingPoints || context.sales.commonObjections) {
-    sections.push(`## Sales Information
+  // Sales info (for sales training primarily)
+  if (["sales_training", "chatbot", "all"].includes(feature)) {
+    if (context.sales.uniqueSellingPoints || context.sales.commonObjections) {
+      sections.push(`## Sales Information
 ${context.sales.uniqueSellingPoints?.length ? `**Unique Selling Points:**
 ${context.sales.uniqueSellingPoints.map((p) => `- ${p}`).join("\n")}` : ""}
 
@@ -265,50 +312,128 @@ ${context.sales.commonObjections.map((o) => `- ${o}`).join("\n")}` : ""}
 ${context.sales.pricingStrategy ? `**Pricing Strategy:** ${context.sales.pricingStrategy}` : ""}
 
 ${context.sales.salesProcess ? `**Sales Process:** ${context.sales.salesProcess}` : ""}`);
-  }
+    }
 
-  // Buyer personas
-  if (context.sales.buyerPersonas?.length) {
-    sections.push(`## Buyer Personas
+    // Buyer personas (for sales training)
+    if (feature === "sales_training" && context.sales.buyerPersonas?.length) {
+      sections.push(`## Buyer Personas
 ${context.sales.buyerPersonas.map((p) => `
 ### ${p.name}
 ${p.description}
 ${p.motivations?.length ? `- Motivations: ${p.motivations.join(", ")}` : ""}
 ${p.objections?.length ? `- Typical Objections: ${p.objections.join(", ")}` : ""}`).join("\n")}`);
+    }
   }
 
-  // Competitors
-  if (context.competitors.length > 0) {
+  // Competitors (for research, sales training)
+  if (["research", "sales_training", "all"].includes(feature) && context.competitors.length > 0) {
     sections.push(`## Competitors
 ${context.competitors.map((c) => `- ${c.name}${c.website ? ` (${c.website})` : ""}${c.markets?.length ? ` - Markets: ${c.markets.join(", ")}` : ""}`).join("\n")}`);
   }
 
-  // Marketing preferences
-  if (context.marketing.contentTone || context.marketing.contentTopics?.length) {
-    sections.push(`## Marketing Guidelines
+  // Marketing preferences (for marketing feature)
+  if (["marketing", "all"].includes(feature)) {
+    if (context.marketing.contentTone || context.marketing.contentTopics?.length) {
+      sections.push(`## Marketing Guidelines
 ${context.marketing.contentTone ? `- Content Tone: ${context.marketing.contentTone}` : ""}
 ${context.marketing.contentTopics?.length ? `- Focus Topics: ${context.marketing.contentTopics.join(", ")}` : ""}
 ${context.marketing.avoidTopics?.length ? `- Topics to Avoid: ${context.marketing.avoidTopics.join(", ")}` : ""}
 ${context.marketing.seoFocus?.length ? `- SEO Keywords: ${context.marketing.seoFocus.join(", ")}` : ""}`);
+    }
   }
 
   // Additional knowledge
   if (context.knowledge.length > 0) {
-    const groupedKnowledge: Record<string, typeof context.knowledge> = {};
-    for (const k of context.knowledge) {
-      if (!groupedKnowledge[k.category]) {
-        groupedKnowledge[k.category] = [];
-      }
-      groupedKnowledge[k.category].push(k);
+    // Filter knowledge by feature
+    let filteredKnowledge = context.knowledge;
+    if (feature === "sales_training") {
+      filteredKnowledge = context.knowledge.filter((k) =>
+        ["sales", "company", "buyer_persona", "competitor_objection"].includes(k.category)
+      );
+    } else if (feature === "marketing") {
+      filteredKnowledge = context.knowledge.filter((k) =>
+        ["marketing", "company", "seo"].includes(k.category)
+      );
+    } else if (feature === "chatbot") {
+      filteredKnowledge = context.knowledge.filter((k) =>
+        ["company", "faq", "community", "floorplan", "pricing"].includes(k.category)
+      );
     }
 
-    sections.push(`## Additional Knowledge
+    if (filteredKnowledge.length > 0) {
+      const groupedKnowledge: Record<string, typeof context.knowledge> = {};
+      for (const k of filteredKnowledge) {
+        if (!groupedKnowledge[k.category]) {
+          groupedKnowledge[k.category] = [];
+        }
+        groupedKnowledge[k.category].push(k);
+      }
+
+      sections.push(`## Additional Knowledge
 ${Object.entries(groupedKnowledge).map(([category, items]) => `
 ### ${category.charAt(0).toUpperCase() + category.slice(1).replace(/_/g, " ")}
 ${items.map((item) => `- ${item.key.replace(/_/g, " ")}: ${item.value}`).join("\n")}`).join("\n")}`);
+    }
   }
 
-  return sections.join("\n\n");
+  // Documents (summaries and key points)
+  if (context.documents.length > 0) {
+    sections.push(`## Reference Documents
+${context.documents.map((doc) => `
+### ${doc.name} (${doc.category.replace(/_/g, " ")})
+${doc.summary ? `Summary: ${doc.summary}` : ""}
+${doc.keyPoints?.length ? `Key Points:\n${doc.keyPoints.map((p) => `- ${p}`).join("\n")}` : ""}`).join("\n")}`);
+  }
+
+  let result = sections.join("\n\n");
+
+  // Truncate if too long (preserve complete sections)
+  if (result.length > maxLength) {
+    const truncatedSections = [];
+    let totalLength = 0;
+
+    for (const section of sections) {
+      if (totalLength + section.length < maxLength - 100) {
+        truncatedSections.push(section);
+        totalLength += section.length;
+      } else {
+        break;
+      }
+    }
+
+    result = truncatedSections.join("\n\n");
+    result += "\n\n[Context truncated due to length]";
+  }
+
+  return result;
+}
+
+/**
+ * Get context specifically for the chatbot feature
+ */
+export async function getChatbotContext(organizationId: string): Promise<string> {
+  return getBuilderContextPrompt(organizationId, { feature: "chatbot", maxLength: 10000 });
+}
+
+/**
+ * Get context specifically for sales training
+ */
+export async function getSalesTrainingContext(organizationId: string): Promise<string> {
+  return getBuilderContextPrompt(organizationId, { feature: "sales_training", maxLength: 8000 });
+}
+
+/**
+ * Get context specifically for marketing content generation
+ */
+export async function getMarketingContext(organizationId: string): Promise<string> {
+  return getBuilderContextPrompt(organizationId, { feature: "marketing", maxLength: 8000 });
+}
+
+/**
+ * Get context for competitive research
+ */
+export async function getResearchContext(organizationId: string): Promise<string> {
+  return getBuilderContextPrompt(organizationId, { feature: "research", maxLength: 6000 });
 }
 
 /**
@@ -340,4 +465,40 @@ export async function getQuickContext(organizationId: string): Promise<string> {
 ${org.description || profile?.valueProposition || ""}
 ${profile?.brandVoice ? `Speak in a ${profile.brandVoice} tone.` : ""}
 ${org.communities.length > 0 ? `We have ${org.communities.length} active communities.` : ""}`;
+}
+
+/**
+ * Get document content for a specific feature
+ */
+export async function getDocumentContext(
+  organizationId: string,
+  feature: FeatureType,
+  limit: number = 5
+): Promise<string> {
+  const documents = await prisma.knowledgeDocument.findMany({
+    where: {
+      organizationId,
+      isActive: true,
+      status: "ready",
+    },
+    orderBy: { priority: "desc" },
+    take: limit * 2, // Fetch extra to filter
+  });
+
+  const filtered = documents.filter((doc) => {
+    if (!doc.targetFeatures) return true;
+    const targets = JSON.parse(doc.targetFeatures);
+    return targets.includes("all") || targets.includes(feature);
+  }).slice(0, limit);
+
+  if (filtered.length === 0) {
+    return "";
+  }
+
+  return `## Reference Documents\n${filtered.map((doc) => {
+    const keyPoints = doc.keyPoints ? JSON.parse(doc.keyPoints) : [];
+    return `### ${doc.name}
+${doc.summary || ""}
+${keyPoints.length > 0 ? `Key Points:\n${keyPoints.map((p: string) => `- ${p}`).join("\n")}` : ""}`;
+  }).join("\n\n")}`;
 }

@@ -121,6 +121,7 @@ model Organization {
   // Onboarding & Knowledge relations
   onboarding         BuilderOnboarding?
   knowledge          BuilderKnowledge[]
+  documents          KnowledgeDocument[]
 
   @@index([slug])
 }
@@ -161,6 +162,7 @@ model Community {
   leads       Lead[]
   faqs        FAQSection[]
   incentives  Incentive[]
+  documents   KnowledgeDocument[]
 
   @@unique([organizationId, slug])
   @@index([organizationId])
@@ -197,6 +199,7 @@ model Floorplan {
 
   inventory InventoryHome[]
   leads     Lead[]
+  documents KnowledgeDocument[]
 
   @@unique([organizationId, slug])
   @@index([organizationId])
@@ -956,5 +959,54 @@ model BuilderKnowledge {
   @@unique([organizationId, category, key])
   @@index([organizationId])
   @@index([category])
+  @@index([isActive])
+}
+
+// Document uploads for knowledge base (brochures, sales guides, specs, etc.)
+model KnowledgeDocument {
+  id              String   @id @default(cuid())
+  name            String   // Display name
+  filename        String   // Original filename
+  fileType        String   // pdf, docx, txt, etc.
+  mimeType        String
+  fileSize        Int      // Size in bytes
+  filePath        String   // Storage path
+
+  // Document categorization
+  category        String   // sales_guide, brochure, floorplan_spec, training_material, faq, policy, other
+  description     String?  // Optional description
+  tags            String?  // JSON array of tags for filtering
+
+  // Extracted content for AI context
+  extractedText   String?  // Full text extracted from document
+  summary         String?  // AI-generated summary of document
+  keyPoints       String?  // JSON array of key points extracted
+
+  // Feature targeting - which features should use this document
+  targetFeatures  String?  // JSON array: ["chatbot", "sales_training", "marketing", "all"]
+
+  // Status and metadata
+  status          String   @default("pending") // pending, processing, ready, error
+  processingError String?
+  isActive        Boolean  @default(true)
+  priority        Int      @default(0) // Higher = more important
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  processedAt     DateTime?
+
+  organization    Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  organizationId  String
+
+  // Optional relation to specific community/floorplan
+  community       Community? @relation(fields: [communityId], references: [id])
+  communityId     String?
+
+  floorplan       Floorplan? @relation(fields: [floorplanId], references: [id])
+  floorplanId     String?
+
+  @@index([organizationId])
+  @@index([category])
+  @@index([status])
   @@index([isActive])
 }

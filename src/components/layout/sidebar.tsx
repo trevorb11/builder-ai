@@ -27,6 +27,7 @@ import {
   Package,
   Gift,
   ClipboardList,
+  FileText,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -215,6 +216,14 @@ const navSections: NavSection[] = [
         href: "/dashboard/competitors",
         icon: Target,
         description: "Track competitors",
+      },
+      {
+        name: "Documents",
+        href: "/dashboard/documents",
+        icon: FileText,
+        description: "Knowledge base files",
+        isNew: true,
+        color: "text-teal-500",
       },
     ],
   },
