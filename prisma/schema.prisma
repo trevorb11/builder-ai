@@ -118,6 +118,10 @@ model Organization {
   contentStrategyConfig  ContentStrategyConfig?
   contentTopics          ContentTopic[]
 
+  // Onboarding & Knowledge relations
+  onboarding         BuilderOnboarding?
+  knowledge          BuilderKnowledge[]
+
   @@index([slug])
 }
 
@@ -765,4 +769,192 @@ model ContentTopic {
   @@index([category])
   @@index([status])
   @@index([priority])
+}
+
+// ==========================================
+// BUILDER ONBOARDING & KNOWLEDGE BASE
+// ==========================================
+
+// Tracks onboarding progress and completion
+model BuilderOnboarding {
+  id              String    @id @default(cuid())
+  status          String    @default("in_progress") // in_progress, completed
+  currentStep     Int       @default(1)
+  totalSteps      Int       @default(10)
+  completedSteps  String?   // JSON array of completed step numbers
+  completedAt     DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  organization    Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  organizationId  String       @unique
+
+  // Related onboarding sections
+  companyProfile    OnboardingCompanyProfile?
+  salesConfig       OnboardingSalesConfig?
+  techAccess        OnboardingTechAccess?
+  contentPrefs      OnboardingContentPrefs?
+  launchConfig      OnboardingLaunchConfig?
+}
+
+// Extended company profile from onboarding
+model OnboardingCompanyProfile {
+  id                String   @id @default(cuid())
+  tagline           String?
+  missionStatement  String?
+  yearEstablished   Int?
+  employeeCount     String?  // e.g., "10-50", "50-100"
+  homesBuiltPerYear String?  // e.g., "50-100", "100-500"
+  targetBuyers      String?  // JSON array: ["first-time", "move-up", "luxury", "active-adult"]
+  priceRanges       String?  // JSON array of price range objects
+  markets           String?  // JSON array of market/region names
+  differentiators   String?  // What makes them unique - text description
+  valueProposition  String?  // Core value proposition
+  brandVoice        String?  // professional, friendly, luxury, approachable, etc.
+  brandPersonality  String?  // JSON array of personality traits
+  competitiveAdvantages String? // JSON array of advantages over competitors
+  awards            String?  // JSON array of awards/recognitions
+  certifications    String?  // JSON array: ["Energy Star", "LEED", etc.]
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  onboarding        BuilderOnboarding @relation(fields: [onboardingId], references: [id], onDelete: Cascade)
+  onboardingId      String   @unique
+}
+
+// Sales training configuration
+model OnboardingSalesConfig {
+  id                    String   @id @default(cuid())
+  teamSize              Int?
+  salesAgents           String?  // JSON array of {name, email, role}
+  commonObjections      String?  // JSON array of common objections they face
+  competitorObjections  String?  // JSON array of competitor-specific objections
+  uniqueSellingPoints   String?  // JSON array of USPs to emphasize
+  pricingStrategy       String?  // How they discuss pricing
+  negotiationBoundaries String?  // What agents can/cannot negotiate
+  closingTechniques     String?  // JSON array of preferred closing approaches
+  existingMaterials     String?  // Description of existing training materials
+  focusAreas            String?  // JSON array of areas to focus training on
+  buyerPersonas         String?  // JSON array of buyer persona objects
+  salesProcess          String?  // Description of their sales process
+  averageSalesCycle     String?  // e.g., "30-60 days"
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  onboarding            BuilderOnboarding @relation(fields: [onboardingId], references: [id], onDelete: Cascade)
+  onboardingId          String   @unique
+}
+
+// Technical access and website info
+model OnboardingTechAccess {
+  id                  String   @id @default(cuid())
+  websiteUrl          String?
+  websitePlatform     String?  // wordpress, custom, squarespace, etc.
+  hasAdminAccess      Boolean  @default(false)
+  adminAccessNotes    String?
+  googleAnalyticsId   String?
+  gtmContainerId      String?
+  hasDnsAccess        Boolean  @default(false)
+  dnsProvider         String?
+  hostingProvider     String?
+  currentChatWidget   String?  // Existing chat tool if any
+  otherMarketingTools String?  // JSON array of tools they use
+  apiAccess           String?  // JSON array of available API integrations
+  sslCertificate      Boolean  @default(false)
+  mobileOptimized     Boolean  @default(false)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  onboarding          BuilderOnboarding @relation(fields: [onboardingId], references: [id], onDelete: Cascade)
+  onboardingId        String   @unique
+}
+
+// Content and marketing preferences
+model OnboardingContentPrefs {
+  id                    String   @id @default(cuid())
+  // Social media
+  facebookHandle        String?
+  instagramHandle       String?
+  linkedinHandle        String?
+  youtubeChannel        String?
+  tiktokHandle          String?
+  pinterestHandle       String?
+  // Email marketing
+  emailPlatform         String?  // mailchimp, constant contact, hubspot, etc.
+  hasEmailIntegration   Boolean  @default(false)
+  emailListSize         String?  // approximate size
+  emailFrequency        String?  // how often they send emails
+  // Content preferences
+  contentTone           String?  // professional, friendly, luxury, casual
+  contentTopics         String?  // JSON array of preferred topics
+  avoidTopics           String?  // JSON array of topics to avoid
+  existingContent       String?  // Description of existing content assets
+  photoLibrary          Boolean  @default(false)
+  videoAssets           Boolean  @default(false)
+  virtualTours          Boolean  @default(false)
+  // Blog/SEO
+  hasBlog               Boolean  @default(false)
+  blogUrl               String?
+  seoFocus              String?  // JSON array of SEO focus keywords
+  // Advertising
+  runsPaidAds           Boolean  @default(false)
+  adPlatforms           String?  // JSON array: ["Google Ads", "Facebook", "Instagram"]
+  monthlyAdBudget       String?
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  onboarding            BuilderOnboarding @relation(fields: [onboardingId], references: [id], onDelete: Cascade)
+  onboardingId          String   @unique
+}
+
+// Launch and approval configuration
+model OnboardingLaunchConfig {
+  id                    String    @id @default(cuid())
+  // Primary contacts
+  primaryContactName    String?
+  primaryContactEmail   String?
+  primaryContactPhone   String?
+  primaryContactRole    String?
+  // Approval workflow
+  requiresApproval      Boolean   @default(true)
+  approverName          String?
+  approverEmail         String?
+  approverPhone         String?
+  approvalProcess       String?   // Description of approval process
+  // Launch timeline
+  targetLaunchDate      DateTime?
+  launchPriorities      String?   // JSON array of priority items for launch
+  phasedRollout         Boolean   @default(false)
+  phaseDetails          String?   // JSON array of phases if phased rollout
+  // Support
+  preferredMeetingTimes String?   // JSON array of preferred times
+  timezone              String?
+  communicationPrefs    String?   // email, phone, slack, etc.
+  additionalNotes       String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  onboarding            BuilderOnboarding @relation(fields: [onboardingId], references: [id], onDelete: Cascade)
+  onboardingId          String    @unique
+}
+
+// Flexible key-value knowledge storage for AI context
+model BuilderKnowledge {
+  id              String   @id @default(cuid())
+  category        String   // company, community, floorplan, pricing, competitor, sales, marketing, faq
+  key             String   // Specific knowledge key
+  value           String   // The knowledge/answer value
+  metadata        String?  // JSON for additional structured data
+  isActive        Boolean  @default(true)
+  priority        Int      @default(0) // Higher priority = more important context
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  organization    Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  organizationId  String
+
+  @@unique([organizationId, category, key])
+  @@index([organizationId])
+  @@index([category])
+  @@index([isActive])
 }

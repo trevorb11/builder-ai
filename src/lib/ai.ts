@@ -393,7 +393,19 @@ Provide data-driven insights with specific recommendations for ${builderName}'s 
 // Helper function to build context from builder data
 export async function buildBuilderContext(organizationId: string): Promise<string> {
   const { prisma } = await import("./db");
+  const { getBuilderContextPrompt } = await import("./knowledge-context");
 
+  // Try to get enhanced context from knowledge system first
+  try {
+    const enhancedContext = await getBuilderContextPrompt(organizationId);
+    if (enhancedContext && enhancedContext.length > 100) {
+      return enhancedContext;
+    }
+  } catch {
+    // Fall back to basic context if knowledge system fails
+  }
+
+  // Fallback: Build basic context from database
   const [organization, communities, floorplans, incentives] = await Promise.all([
     prisma.organization.findUnique({
       where: { id: organizationId },

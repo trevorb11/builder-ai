@@ -26,6 +26,7 @@ import {
   Zap,
   Package,
   Gift,
+  ClipboardList,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -74,6 +75,13 @@ const navSections: NavSection[] = [
         href: "/dashboard",
         icon: LayoutGrid,
         description: "Your command center",
+      },
+      {
+        name: "Platform Setup",
+        href: "/dashboard/onboarding",
+        icon: ClipboardList,
+        description: "Configure your account",
+        color: "text-green-500",
       },
     ],
   },
