@@ -208,6 +208,33 @@ export default async function DashboardPage() {
       </div>
 
       <div className="p-8 space-y-8">
+        {/* Onboarding Prompt for new users */}
+        {stats && (stats.communities === 0 || stats.leads === 0) && (
+          <Card className="border-blue-200 bg-gradient-to-r from-blue-50 to-purple-50">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <div className="h-12 w-12 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 flex items-center justify-center">
+                    <Sparkles className="h-6 w-6 text-white" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-gray-900">Complete Your Setup</h3>
+                    <p className="text-sm text-gray-600">
+                      Add your communities and floorplans to get the most out of Builder AI
+                    </p>
+                  </div>
+                </div>
+                <Link href="/dashboard/onboarding">
+                  <Button className="gap-2">
+                    View Checklist
+                    <ArrowRight className="h-4 w-4" />
+                  </Button>
+                </Link>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         {/* Stats Grid */}
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           <StatCard

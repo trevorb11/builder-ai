@@ -4,17 +4,24 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { BarChart3, Users, Home, TrendingUp, MessageSquare, Target } from "lucide-react";
 
 async function getAnalyticsData(organizationId: string) {
+  const thirtyDaysAgo = new Date();
+  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
   const [
     totalLeads,
     totalCommunities,
     totalFloorplans,
     totalConversations,
     recentLeads,
+    qualifiedLeads,
+    newLeadsThisMonth,
+    contentGenerated,
+    leadsWithConversations,
   ] = await Promise.all([
     prisma.lead.count({ where: { organizationId } }),
     prisma.community.count({ where: { organizationId, status: "active" } }),
     prisma.floorplan.count({ where: { organizationId, status: "active" } }),
-    prisma.conversation.count(),
+    prisma.conversation.count({ where: { lead: { organizationId } } }),
     prisma.lead.findMany({
       where: { organizationId },
       orderBy: { createdAt: "desc" },
@@ -28,9 +35,26 @@ async function getAnalyticsData(organizationId: string) {
         createdAt: true,
       },
     }),
+    prisma.lead.count({ where: { organizationId, status: "qualified" } }),
+    prisma.lead.count({ where: { organizationId, createdAt: { gte: thirtyDaysAgo } } }),
+    prisma.marketingContent.count({ where: { organizationId } }),
+    prisma.lead.count({ where: { organizationId, conversations: { some: {} } } }),
   ]);
 
-  return { totalLeads, totalCommunities, totalFloorplans, totalConversations, recentLeads };
+  const conversionRate = totalLeads > 0 ? Math.round((qualifiedLeads / totalLeads) * 100) : 0;
+
+  return { 
+    totalLeads, 
+    totalCommunities, 
+    totalFloorplans, 
+    totalConversations, 
+    recentLeads,
+    qualifiedLeads,
+    newLeadsThisMonth,
+    contentGenerated,
+    conversionRate,
+    leadsWithConversations,
+  };
 }
 
 export default async function AnalyticsPage() {
@@ -156,17 +180,25 @@ export default async function AnalyticsPage() {
               <div className="flex items-center justify-between">
                 <span className="text-gray-600">Lead Conversion Rate</span>
                 <div className="flex items-center gap-2">
-                  <TrendingUp className="h-4 w-4 text-green-500" />
-                  <span className="font-medium">Coming Soon</span>
+                  {data.conversionRate > 0 && <TrendingUp className="h-4 w-4 text-green-500" />}
+                  <span className="font-medium">{data.conversionRate}%</span>
                 </div>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-gray-600">Avg. Response Time</span>
-                <span className="font-medium">Coming Soon</span>
+                <span className="text-gray-600">New Leads (30 days)</span>
+                <span className="font-medium">{data.newLeadsThisMonth}</span>
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-gray-600">Content Generated</span>
-                <span className="font-medium">Coming Soon</span>
+                <span className="font-medium">{data.contentGenerated}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-gray-600">Leads with AI Chats</span>
+                <span className="font-medium">{data.leadsWithConversations}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-gray-600">Qualified Leads</span>
+                <span className="font-medium text-green-600">{data.qualifiedLeads}</span>
               </div>
             </div>
           </CardContent>
