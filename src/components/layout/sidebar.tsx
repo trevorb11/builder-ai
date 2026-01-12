@@ -19,12 +19,15 @@ import {
   LogOut,
   Sparkles,
   Globe,
-  TrendingUp,
   Lightbulb,
   BarChart3,
   HelpCircle,
   ChevronRight,
   ClipboardCheck,
+  Menu,
+  X,
+  Plus,
+  UserPlus,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -62,93 +65,125 @@ interface NavItem {
 
 const navSections: NavSection[] = [
   {
-    title: "Overview",
+    title: "Getting Started",
     items: [
       {
         name: "Dashboard",
         href: "/dashboard",
         icon: LayoutGrid,
-        description: "Overview & metrics",
+        description: "Your home base",
       },
       {
-        name: "Onboarding",
+        name: "Setup Checklist",
         href: "/dashboard/onboarding",
         icon: ClipboardCheck,
-        description: "Setup checklist",
+        description: "Complete your setup",
         color: "text-green-500",
       },
     ],
   },
   {
-    title: "Deep Research",
+    title: "Your Business",
     items: [
       {
-        name: "Digital Footprint",
-        href: "/dashboard/research/footprint",
-        icon: Globe,
-        description: "Analyze your presence",
-        badge: "AI",
-        color: "text-teal-500",
+        name: "Communities",
+        href: "/dashboard/communities",
+        icon: Building2,
+        description: "Manage neighborhoods",
       },
       {
-        name: "Competitor Intel",
-        href: "/dashboard/research/competitors",
-        icon: Target,
-        description: "Deep competitor analysis",
-        badge: "AI",
-        color: "text-amber-500",
+        name: "Floorplans",
+        href: "/dashboard/floorplans",
+        icon: Home,
+        description: "Home designs",
       },
       {
-        name: "Content Strategy",
-        href: "/dashboard/research/content",
-        icon: Lightbulb,
-        description: "Topic recommendations",
-        badge: "AI",
-        color: "text-purple-500",
+        name: "Leads",
+        href: "/dashboard/leads",
+        icon: Users,
+        description: "Potential buyers",
+      },
+      {
+        name: "Analytics",
+        href: "/dashboard/analytics",
+        icon: BarChart3,
+        description: "Performance insights",
       },
     ],
   },
   {
-    title: "AI Tools",
+    title: "AI Assistants",
     items: [
       {
-        name: "Website Assistant",
+        name: "Website Chatbot",
         href: "/dashboard/assistant",
         icon: MessageSquare,
-        description: "AI chatbot",
+        description: "Chat with visitors",
+        badge: "AI",
         color: "text-blue-500",
       },
       {
-        name: "Marketing",
+        name: "Marketing Writer",
         href: "/dashboard/marketing",
         icon: FileEdit,
-        description: "Content generation",
+        description: "Create content",
+        badge: "AI",
         color: "text-violet-500",
       },
       {
-        name: "SEO & AI Search",
-        href: "/dashboard/seo",
-        icon: Search,
-        description: "Optimization tools",
-        color: "text-emerald-500",
-      },
-      {
-        name: "Sales Training",
+        name: "Sales Coach",
         href: "/dashboard/training",
         icon: GraduationCap,
-        description: "AI roleplay coach",
+        description: "Practice selling",
+        badge: "AI",
         color: "text-pink-500",
       },
     ],
   },
   {
-    title: "Integrations",
+    title: "Research & SEO",
     items: [
       {
-        name: "CRM",
+        name: "Your Online Presence",
+        href: "/dashboard/research/footprint",
+        icon: Globe,
+        description: "See how you appear online",
+        badge: "AI",
+        color: "text-teal-500",
+      },
+      {
+        name: "Competitor Watch",
+        href: "/dashboard/research/competitors",
+        icon: Target,
+        description: "Track competitors",
+        badge: "AI",
+        color: "text-amber-500",
+      },
+      {
+        name: "Content Ideas",
+        href: "/dashboard/research/content",
+        icon: Lightbulb,
+        description: "What to write about",
+        badge: "AI",
+        color: "text-purple-500",
+      },
+      {
+        name: "SEO Tools",
+        href: "/dashboard/seo",
+        icon: Search,
+        description: "Get found on Google",
+        color: "text-emerald-500",
+      },
+    ],
+  },
+  {
+    title: "Connections",
+    items: [
+      {
+        name: "CRM Sync",
         href: "/dashboard/crm",
         icon: Link2,
-        description: "HubSpot, Salesforce, GHL",
+        description: "HubSpot, Salesforce",
         color: "text-cyan-500",
       },
       {
@@ -160,36 +195,12 @@ const navSections: NavSection[] = [
       },
     ],
   },
-  {
-    title: "Data",
-    items: [
-      {
-        name: "Communities",
-        href: "/dashboard/communities",
-        icon: Building2,
-      },
-      {
-        name: "Floorplans",
-        href: "/dashboard/floorplans",
-        icon: Home,
-      },
-      {
-        name: "Leads",
-        href: "/dashboard/leads",
-        icon: Users,
-      },
-      {
-        name: "Analytics",
-        href: "/dashboard/analytics",
-        icon: BarChart3,
-      },
-    ],
-  },
 ];
 
 export function Sidebar({ user }: SidebarProps) {
   const pathname = usePathname();
   const [collapsedSections, setCollapsedSections] = useState<Set<string>>(new Set());
+  const [isMobileOpen, setIsMobileOpen] = useState(false);
 
   const toggleSection = (title: string) => {
     const newCollapsed = new Set(collapsedSections);
@@ -201,8 +212,8 @@ export function Sidebar({ user }: SidebarProps) {
     setCollapsedSections(newCollapsed);
   };
 
-  return (
-    <div className="flex h-full w-72 flex-col border-r border-gray-200 bg-white">
+  const SidebarContent = () => (
+    <>
       {/* Logo */}
       <div className="flex h-16 items-center gap-3 border-b border-gray-200 px-6">
         <div className="flex h-10 w-10 items-center justify-center rounded-xl gradient-primary shadow-md">
@@ -210,7 +221,25 @@ export function Sidebar({ user }: SidebarProps) {
         </div>
         <div>
           <span className="text-lg font-bold text-gray-900">Builder AI</span>
-          <p className="text-xs text-gray-500">AI-Powered Home Builder Tools</p>
+          <p className="text-xs text-gray-500">For Home Builders</p>
+        </div>
+      </div>
+
+      {/* Quick Actions */}
+      <div className="px-4 py-3 border-b border-gray-100">
+        <div className="flex gap-2">
+          <Link href="/dashboard/communities/new" className="flex-1">
+            <Button variant="outline" size="sm" className="w-full gap-1.5 text-xs">
+              <Plus className="h-3.5 w-3.5" />
+              Community
+            </Button>
+          </Link>
+          <Link href="/dashboard/leads" className="flex-1">
+            <Button variant="outline" size="sm" className="w-full gap-1.5 text-xs">
+              <UserPlus className="h-3.5 w-3.5" />
+              Lead
+            </Button>
+          </Link>
         </div>
       </div>
 
@@ -220,22 +249,22 @@ export function Sidebar({ user }: SidebarProps) {
           const isCollapsed = collapsedSections.has(section.title);
 
           return (
-            <div key={section.title} className={cn(sectionIndex > 0 && "mt-6")}>
+            <div key={section.title} className={cn(sectionIndex > 0 && "mt-5")}>
               <button
                 onClick={() => toggleSection(section.title)}
-                className="flex w-full items-center justify-between px-3 py-2 text-xs font-semibold uppercase tracking-wider text-gray-400 hover:text-gray-600"
+                className="flex w-full items-center justify-between px-3 py-2 text-xs font-semibold uppercase tracking-wider text-gray-400 hover:text-gray-600 transition-colors"
               >
                 {section.title}
                 <ChevronRight
                   className={cn(
-                    "h-3 w-3 transition-transform",
+                    "h-3 w-3 transition-transform duration-200",
                     !isCollapsed && "rotate-90"
                   )}
                 />
               </button>
 
               {!isCollapsed && (
-                <div className="mt-1 space-y-1">
+                <div className="mt-1 space-y-0.5">
                   {section.items.map((item) => {
                     const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
 
@@ -243,10 +272,11 @@ export function Sidebar({ user }: SidebarProps) {
                       <Link
                         key={item.name}
                         href={item.href}
+                        onClick={() => setIsMobileOpen(false)}
                         className={cn(
-                          "group flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition-all duration-200",
+                          "group flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition-all duration-150",
                           isActive
-                            ? "bg-blue-50 text-blue-700 shadow-sm"
+                            ? "bg-blue-50 text-blue-700 font-medium"
                             : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
                         )}
                       >
@@ -258,23 +288,13 @@ export function Sidebar({ user }: SidebarProps) {
                         />
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2">
-                            <span className="font-medium truncate">{item.name}</span>
+                            <span className="truncate">{item.name}</span>
                             {item.badge && (
                               <span className="inline-flex items-center rounded-full bg-gradient-to-r from-blue-500 to-purple-500 px-1.5 py-0.5 text-[10px] font-semibold text-white">
                                 {item.badge}
                               </span>
                             )}
                           </div>
-                          {item.description && (
-                            <span
-                              className={cn(
-                                "text-xs truncate block",
-                                isActive ? "text-blue-600/70" : "text-gray-400"
-                              )}
-                            >
-                              {item.description}
-                            </span>
-                          )}
                         </div>
                       </Link>
                     );
@@ -286,11 +306,18 @@ export function Sidebar({ user }: SidebarProps) {
         })}
       </nav>
 
-      {/* Help & Support */}
-      <div className="border-t border-gray-100 px-3 py-3">
+      {/* Help & Settings */}
+      <div className="border-t border-gray-100 px-3 py-2">
+        <Link
+          href="/dashboard/settings"
+          className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-colors"
+        >
+          <Settings className="h-5 w-5 text-gray-400" />
+          <span>Settings</span>
+        </Link>
         <Link
           href="/dashboard/help"
-          className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+          className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-colors"
         >
           <HelpCircle className="h-5 w-5 text-gray-400" />
           <span>Help & Support</span>
@@ -338,7 +365,7 @@ export function Sidebar({ user }: SidebarProps) {
                 className="flex items-center gap-2"
               >
                 <Building2 className="h-4 w-4" />
-                Organization
+                Company Profile
               </Link>
             </DropdownMenuItem>
             <DropdownMenuSeparator />
@@ -354,6 +381,53 @@ export function Sidebar({ user }: SidebarProps) {
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
-    </div>
+    </>
+  );
+
+  return (
+    <>
+      {/* Mobile Header */}
+      <div className="lg:hidden fixed top-0 left-0 right-0 z-50 flex h-14 items-center justify-between border-b border-gray-200 bg-white px-4">
+        <div className="flex items-center gap-2">
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg gradient-primary">
+            <Sparkles className="h-4 w-4 text-white" />
+          </div>
+          <span className="font-bold text-gray-900">Builder AI</span>
+        </div>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => setIsMobileOpen(!isMobileOpen)}
+          className="p-2"
+        >
+          {isMobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+        </Button>
+      </div>
+
+      {/* Mobile Sidebar Overlay */}
+      {isMobileOpen && (
+        <div
+          className="lg:hidden fixed inset-0 z-40 bg-black/50"
+          onClick={() => setIsMobileOpen(false)}
+        />
+      )}
+
+      {/* Mobile Sidebar */}
+      <div
+        className={cn(
+          "lg:hidden fixed top-14 left-0 bottom-0 z-40 w-72 bg-white border-r border-gray-200 transform transition-transform duration-200",
+          isMobileOpen ? "translate-x-0" : "-translate-x-full"
+        )}
+      >
+        <div className="flex h-full flex-col overflow-hidden">
+          <SidebarContent />
+        </div>
+      </div>
+
+      {/* Desktop Sidebar */}
+      <div className="hidden lg:flex h-full w-72 flex-col border-r border-gray-200 bg-white">
+        <SidebarContent />
+      </div>
+    </>
   );
 }
