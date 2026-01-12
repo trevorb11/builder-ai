@@ -371,7 +371,7 @@ export function Sidebar({ user }: SidebarProps) {
             <DropdownMenuSeparator />
             <DropdownMenuItem asChild>
               <Link
-                href="/api/auth/signout"
+                href="/signout"
                 className="flex items-center gap-2 text-red-600"
               >
                 <LogOut className="h-4 w-4" />
