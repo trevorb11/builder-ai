@@ -81,17 +81,17 @@ export default async function FloorplansPage() {
   };
 
   return (
-    <div className="p-8">
-      <div className="mb-8">
-        <div className="flex items-center gap-3">
-          <div className="rounded-lg bg-violet-500 p-2">
-            <LayoutGrid className="h-6 w-6 text-white" />
+    <div className="p-4 sm:p-6 lg:p-8">
+      <div className="mb-6 sm:mb-8">
+        <div className="flex items-start sm:items-center gap-3">
+          <div className="rounded-lg bg-violet-500 p-2 flex-shrink-0">
+            <LayoutGrid className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
           </div>
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">
+          <div className="min-w-0">
+            <h1 className="text-xl sm:text-2xl font-bold text-gray-900">
               Floorplan Management
             </h1>
-            <p className="text-gray-600">
+            <p className="text-sm sm:text-base text-gray-600">
               Manage your floorplans, pricing, and features
             </p>
           </div>
@@ -99,7 +99,7 @@ export default async function FloorplansPage() {
       </div>
 
       {/* Stats */}
-      <div className="mb-8 grid gap-4 md:grid-cols-4">
+      <div className="mb-6 sm:mb-8 grid gap-3 sm:gap-4 grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-gray-500">
@@ -144,19 +144,22 @@ export default async function FloorplansPage() {
       </div>
 
       {/* Main Content */}
-      <Tabs defaultValue="floorplans" className="space-y-6">
-        <TabsList>
-          <TabsTrigger value="floorplans" className="gap-2">
-            <Home className="h-4 w-4" />
-            Floorplans
+      <Tabs defaultValue="floorplans" className="space-y-4 sm:space-y-6">
+        <TabsList className="w-full sm:w-auto flex-wrap h-auto gap-1 p-1">
+          <TabsTrigger value="floorplans" className="gap-1.5 sm:gap-2 text-xs sm:text-sm flex-1 sm:flex-initial">
+            <Home className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+            <span className="hidden sm:inline">Floorplans</span>
+            <span className="sm:hidden">Plans</span>
           </TabsTrigger>
-          <TabsTrigger value="add" className="gap-2">
-            <Plus className="h-4 w-4" />
-            Add Floorplan
+          <TabsTrigger value="add" className="gap-1.5 sm:gap-2 text-xs sm:text-sm flex-1 sm:flex-initial">
+            <Plus className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+            <span className="hidden sm:inline">Add Floorplan</span>
+            <span className="sm:hidden">Add</span>
           </TabsTrigger>
-          <TabsTrigger value="stats" className="gap-2">
-            <BarChart3 className="h-4 w-4" />
-            Analytics
+          <TabsTrigger value="stats" className="gap-1.5 sm:gap-2 text-xs sm:text-sm flex-1 sm:flex-initial">
+            <BarChart3 className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+            <span className="hidden sm:inline">Analytics</span>
+            <span className="sm:hidden">Stats</span>
           </TabsTrigger>
         </TabsList>
 

@@ -179,27 +179,27 @@ export default async function DashboardPage() {
     <div className="min-h-screen bg-gray-50/50">
       {/* Header */}
       <div className="border-b border-gray-200 bg-white">
-        <div className="px-8 py-6">
-          <div className="flex items-center justify-between">
+        <div className="px-4 sm:px-6 lg:px-8 py-4 sm:py-6">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">
+              <h1 className="text-xl sm:text-2xl font-bold text-gray-900">
                 Welcome back{session?.user?.name ? `, ${session.user.name}` : ""}
               </h1>
-              <p className="mt-1 text-gray-500">
+              <p className="mt-1 text-sm sm:text-base text-gray-500">
                 {session?.user?.organizationName || "Your AI-powered builder tools dashboard"}
               </p>
             </div>
-            <div className="flex items-center gap-3">
-              <Link href="/dashboard/communities/new">
-                <Button variant="outline" className="gap-2">
+            <div className="flex items-center gap-2 sm:gap-3">
+              <Link href="/dashboard/communities/new" className="flex-1 sm:flex-none">
+                <Button variant="outline" className="gap-2 w-full sm:w-auto text-sm">
                   <Building2 className="h-4 w-4" />
-                  Add Community
+                  <span className="hidden xs:inline">Add</span> Community
                 </Button>
               </Link>
-              <Link href="/dashboard/research/footprint">
-                <Button className="gap-2 bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600">
+              <Link href="/dashboard/research/footprint" className="flex-1 sm:flex-none">
+                <Button className="gap-2 w-full sm:w-auto text-sm bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600">
                   <Sparkles className="h-4 w-4" />
-                  Start Research
+                  <span className="hidden xs:inline">Start</span> Research
                 </Button>
               </Link>
             </div>
@@ -207,7 +207,7 @@ export default async function DashboardPage() {
         </div>
       </div>
 
-      <div className="p-8 space-y-8">
+      <div className="p-4 sm:p-6 lg:p-8 space-y-6 sm:space-y-8">
         {/* Onboarding Prompt for new users */}
         {stats && (stats.communities === 0 || stats.leads === 0) && (
           <Card className="border-blue-200 bg-gradient-to-r from-blue-50 to-purple-50">
@@ -236,7 +236,7 @@ export default async function DashboardPage() {
         )}
 
         {/* Stats Grid */}
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-3 sm:gap-4 grid-cols-2 lg:grid-cols-4">
           <StatCard
             title="Communities"
             value={stats?.communities || 0}
@@ -280,7 +280,7 @@ export default async function DashboardPage() {
             </Link>
           </div>
 
-          <div className="grid gap-4 md:grid-cols-3">
+          <div className="grid gap-3 sm:gap-4 sm:grid-cols-2 md:grid-cols-3">
             {researchTools.map((tool) => (
               <Link key={tool.name} href={tool.href}>
                 <Card className="h-full transition-all duration-200 hover:shadow-lg hover:-translate-y-1 card-hover overflow-hidden group">
@@ -312,7 +312,7 @@ export default async function DashboardPage() {
             <h2 className="text-lg font-semibold text-gray-900">AI Tools</h2>
           </div>
 
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-3 sm:gap-4 grid-cols-2 lg:grid-cols-3">
             {aiTools.map((tool) => (
               <Link key={tool.name} href={tool.href}>
                 <Card className="h-full transition-all duration-200 hover:shadow-md">
@@ -334,7 +334,7 @@ export default async function DashboardPage() {
         </div>
 
         {/* Recent Activity Section */}
-        <div className="grid gap-6 lg:grid-cols-2">
+        <div className="grid gap-4 sm:gap-6 md:grid-cols-2">
           {/* Recent Leads */}
           <Card>
             <CardHeader>
@@ -474,21 +474,21 @@ function StatCard({
 }) {
   return (
     <Card>
-      <CardContent className="p-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-sm font-medium text-gray-500">{title}</p>
-            <p className="text-3xl font-bold text-gray-900 mt-1">{value}</p>
-            <p className="text-xs text-gray-500 mt-1">{description}</p>
+      <CardContent className="p-4 sm:p-6">
+        <div className="flex items-start justify-between">
+          <div className="min-w-0 flex-1">
+            <p className="text-xs sm:text-sm font-medium text-gray-500 truncate">{title}</p>
+            <p className="text-2xl sm:text-3xl font-bold text-gray-900 mt-1">{value}</p>
+            <p className="text-xs text-gray-500 mt-1 truncate hidden sm:block">{description}</p>
             {trend && (
-              <p className="text-xs text-green-600 mt-2 flex items-center gap-1">
+              <p className="text-xs text-green-600 mt-2 items-center gap-1 hidden sm:flex">
                 <TrendingUp className="h-3 w-3" />
                 {trend}
               </p>
             )}
           </div>
-          <div className="h-12 w-12 rounded-full bg-gray-100 flex items-center justify-center">
-            <Icon className="h-6 w-6 text-gray-600" />
+          <div className="h-10 w-10 sm:h-12 sm:w-12 rounded-full bg-gray-100 flex items-center justify-center flex-shrink-0">
+            <Icon className="h-5 w-5 sm:h-6 sm:w-6 text-gray-600" />
           </div>
         </div>
       </CardContent>

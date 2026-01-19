@@ -103,15 +103,15 @@ export default async function LeadsPage() {
   ).length;
 
   return (
-    <div className="p-8">
-      <div className="mb-8">
-        <div className="flex items-center gap-3">
-          <div className="rounded-lg bg-cyan-500 p-2">
-            <Users className="h-6 w-6 text-white" />
+    <div className="p-4 sm:p-6 lg:p-8">
+      <div className="mb-6 sm:mb-8">
+        <div className="flex items-start sm:items-center gap-3">
+          <div className="rounded-lg bg-cyan-500 p-2 flex-shrink-0">
+            <Users className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
           </div>
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">Lead Management</h1>
-            <p className="text-gray-600">
+          <div className="min-w-0">
+            <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Lead Management</h1>
+            <p className="text-sm sm:text-base text-gray-600">
               Track and manage leads from your AI chatbot and realtor portal
             </p>
           </div>
@@ -119,7 +119,7 @@ export default async function LeadsPage() {
       </div>
 
       {/* Stats */}
-      <div className="mb-8 grid gap-4 md:grid-cols-6">
+      <div className="mb-6 sm:mb-8 grid gap-3 sm:gap-4 grid-cols-2 sm:grid-cols-3 lg:grid-cols-6">
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-gray-500">
@@ -192,20 +192,26 @@ export default async function LeadsPage() {
       </div>
 
       {/* Main Content */}
-      <Tabs defaultValue="all" className="space-y-6">
+      <Tabs defaultValue="all" className="space-y-4 sm:space-y-6">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <TabsList>
-            <TabsTrigger value="all" className="gap-2">
-              All Leads
+          <TabsList className="w-full sm:w-auto flex-wrap h-auto gap-1 p-1">
+            <TabsTrigger value="all" className="gap-1 sm:gap-2 text-xs sm:text-sm flex-1 sm:flex-initial">
+              <span className="hidden sm:inline">All Leads</span>
+              <span className="sm:hidden">All</span>
             </TabsTrigger>
-            <TabsTrigger value="new" className="gap-2">
-              New ({newLeads})
+            <TabsTrigger value="new" className="gap-1 sm:gap-2 text-xs sm:text-sm flex-1 sm:flex-initial">
+              <span className="hidden sm:inline">New</span>
+              <span className="sm:hidden">New</span>
+              <span className="text-[10px] sm:text-xs bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded-full">{newLeads}</span>
             </TabsTrigger>
-            <TabsTrigger value="qualified" className="gap-2">
-              Qualified ({qualifiedLeads})
+            <TabsTrigger value="qualified" className="gap-1 sm:gap-2 text-xs sm:text-sm flex-1 sm:flex-initial">
+              <span className="hidden sm:inline">Qualified</span>
+              <span className="sm:hidden">Qual.</span>
+              <span className="text-[10px] sm:text-xs bg-purple-100 text-purple-700 px-1.5 py-0.5 rounded-full">{qualifiedLeads}</span>
             </TabsTrigger>
-            <TabsTrigger value="analytics" className="gap-2">
-              Analytics
+            <TabsTrigger value="analytics" className="gap-1 sm:gap-2 text-xs sm:text-sm flex-1 sm:flex-initial">
+              <span className="hidden sm:inline">Analytics</span>
+              <span className="sm:hidden">Stats</span>
             </TabsTrigger>
           </TabsList>
         </div>

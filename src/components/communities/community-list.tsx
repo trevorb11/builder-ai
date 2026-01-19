@@ -43,6 +43,7 @@ interface Community {
   status: string;
   startingPrice: number | null;
   priceRange: string | null;
+  hoaFee: number | null;
   amenities: string | null;
   floorplans: { id: string; name: string; basePrice: number }[];
   inventory: { id: string; status: string }[];
@@ -74,11 +75,15 @@ export function CommunityList({ communities }: CommunityListProps) {
         body: JSON.stringify({
           name: formData.get("name"),
           description: formData.get("description"),
+          address: formData.get("address") || null,
           city: formData.get("city"),
           state: formData.get("state"),
           zipCode: formData.get("zipCode"),
           status: formData.get("status"),
           startingPrice: formData.get("startingPrice") ? parseFloat(formData.get("startingPrice") as string) : null,
+          priceRange: formData.get("priceRange") || null,
+          hoaFee: formData.get("hoaFee") ? parseFloat(formData.get("hoaFee") as string) : null,
+          amenities: formData.get("amenities") || null,
         }),
       });
 
@@ -90,6 +95,16 @@ export function CommunityList({ communities }: CommunityListProps) {
       console.error("Failed to update community:", error);
     } finally {
       setIsEditing(false);
+    }
+  };
+
+  const parseAmenities = (amenitiesJson: string | null): string => {
+    if (!amenitiesJson) return "";
+    try {
+      const amenities = JSON.parse(amenitiesJson);
+      return Array.isArray(amenities) ? amenities.join(", ") : "";
+    } catch {
+      return "";
     }
   };
 
@@ -232,7 +247,7 @@ export function CommunityList({ communities }: CommunityListProps) {
 
       {/* Edit Dialog */}
       <Dialog open={!!editCommunity} onOpenChange={() => setEditCommunity(null)}>
-        <DialogContent className="max-w-lg">
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Edit Community</DialogTitle>
             <DialogDescription>
@@ -240,81 +255,144 @@ export function CommunityList({ communities }: CommunityListProps) {
             </DialogDescription>
           </DialogHeader>
           {editCommunity && (
-            <form onSubmit={handleEdit} className="space-y-4">
-              <div>
-                <Label htmlFor="name">Community Name</Label>
-                <Input
-                  id="name"
-                  name="name"
-                  defaultValue={editCommunity.name}
-                  required
-                />
-              </div>
+            <form onSubmit={handleEdit} className="space-y-6">
+              {/* Basic Info */}
+              <div className="space-y-4">
+                <h3 className="font-medium text-gray-900 border-b pb-2">Basic Information</h3>
 
-              <div>
-                <Label htmlFor="description">Description</Label>
-                <Textarea
-                  id="description"
-                  name="description"
-                  defaultValue={editCommunity.description || ""}
-                  rows={3}
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <Label htmlFor="city">City</Label>
+                  <Label htmlFor="name">Community Name *</Label>
                   <Input
-                    id="city"
-                    name="city"
-                    defaultValue={editCommunity.city || ""}
+                    id="name"
+                    name="name"
+                    defaultValue={editCommunity.name}
+                    required
                   />
                 </div>
-                <div>
-                  <Label htmlFor="state">State</Label>
-                  <Input
-                    id="state"
-                    name="state"
-                    defaultValue={editCommunity.state || ""}
-                  />
-                </div>
-              </div>
 
-              <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <Label htmlFor="zipCode">Zip Code</Label>
-                  <Input
-                    id="zipCode"
-                    name="zipCode"
-                    defaultValue={editCommunity.zipCode || ""}
+                  <Label htmlFor="description">Description</Label>
+                  <Textarea
+                    id="description"
+                    name="description"
+                    defaultValue={editCommunity.description || ""}
+                    rows={3}
                   />
                 </div>
+
                 <div>
-                  <Label htmlFor="startingPrice">Starting Price</Label>
-                  <Input
-                    id="startingPrice"
-                    name="startingPrice"
-                    type="number"
-                    defaultValue={editCommunity.startingPrice || ""}
-                  />
+                  <Label htmlFor="status">Status</Label>
+                  <Select name="status" defaultValue={editCommunity.status}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="active">Active</SelectItem>
+                      <SelectItem value="coming_soon">Coming Soon</SelectItem>
+                      <SelectItem value="sold_out">Sold Out</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
 
-              <div>
-                <Label htmlFor="status">Status</Label>
-                <Select name="status" defaultValue={editCommunity.status}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="active">Active</SelectItem>
-                    <SelectItem value="coming_soon">Coming Soon</SelectItem>
-                    <SelectItem value="sold_out">Sold Out</SelectItem>
-                  </SelectContent>
-                </Select>
+              {/* Location */}
+              <div className="space-y-4">
+                <h3 className="font-medium text-gray-900 border-b pb-2">Location</h3>
+
+                <div>
+                  <Label htmlFor="address">Street Address</Label>
+                  <Input
+                    id="address"
+                    name="address"
+                    defaultValue={editCommunity.address || ""}
+                  />
+                </div>
+
+                <div className="grid gap-4 sm:grid-cols-3">
+                  <div>
+                    <Label htmlFor="city">City</Label>
+                    <Input
+                      id="city"
+                      name="city"
+                      defaultValue={editCommunity.city || ""}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="state">State</Label>
+                    <Input
+                      id="state"
+                      name="state"
+                      defaultValue={editCommunity.state || ""}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="zipCode">Zip Code</Label>
+                    <Input
+                      id="zipCode"
+                      name="zipCode"
+                      defaultValue={editCommunity.zipCode || ""}
+                    />
+                  </div>
+                </div>
               </div>
 
-              <div className="flex justify-end gap-2">
+              {/* Pricing & Fees */}
+              <div className="space-y-4">
+                <h3 className="font-medium text-gray-900 border-b pb-2">Pricing & Fees</h3>
+
+                <div className="grid gap-4 sm:grid-cols-3">
+                  <div>
+                    <Label htmlFor="startingPrice">Starting Price</Label>
+                    <Input
+                      id="startingPrice"
+                      name="startingPrice"
+                      type="number"
+                      min="0"
+                      defaultValue={editCommunity.startingPrice || ""}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="priceRange">Price Range</Label>
+                    <Input
+                      id="priceRange"
+                      name="priceRange"
+                      placeholder="$350K - $550K"
+                      defaultValue={editCommunity.priceRange || ""}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="hoaFee">HOA Fee (Monthly)</Label>
+                    <Input
+                      id="hoaFee"
+                      name="hoaFee"
+                      type="number"
+                      min="0"
+                      defaultValue={editCommunity.hoaFee || ""}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Community Features */}
+              <div className="space-y-4">
+                <h3 className="font-medium text-gray-900 border-b pb-2">Community Features</h3>
+
+                <div>
+                  <Label htmlFor="amenities">Amenities</Label>
+                  <Textarea
+                    id="amenities"
+                    name="amenities"
+                    defaultValue={parseAmenities(editCommunity.amenities)}
+                    placeholder="Pool, Clubhouse, Walking Trails, Playground..."
+                    rows={2}
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Separate amenities with commas
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex justify-end gap-2 pt-4 border-t">
                 <Button
                   type="button"
                   variant="outline"
