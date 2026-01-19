@@ -84,6 +84,13 @@ interface ChecklistSection {
   optional?: boolean;
 }
 
+// Auto-detected keys that update based on database state
+const autoDetectedKeys = new Set([
+  "companyName", "contacts", "websiteUrl", "marketsServed", "brandAssets",
+  "communitiesAdded", "floorplansAdded", "incentivesAdded", "inventoryAdded",
+  "crmConnected", "chatbotPlacement", "competitorsAdded", "realtorDatabase", "socialHandles"
+]);
+
 const sections: ChecklistSection[] = [
   {
     id: "company",
@@ -95,10 +102,10 @@ const sections: ChecklistSection[] = [
       { key: "companyName", label: "Company name", description: "Your builder company name", required: true, link: "/dashboard/settings/organization", linkLabel: "Edit" },
       { key: "contacts", label: "Primary contacts", description: "Name, email, phone for main contacts", link: "/dashboard/settings/organization", linkLabel: "Edit" },
       { key: "websiteUrl", label: "Website URL", description: "Your company website address", required: true, link: "/dashboard/settings/organization", linkLabel: "Edit" },
-      { key: "tagline", label: "Tagline / slogan", description: "Your brand tagline or slogan" },
-      { key: "buyerPersonas", label: "Target buyer personas", description: "Who are your ideal home buyers?" },
+      { key: "tagline", label: "Tagline / slogan", description: "Your brand tagline or slogan", link: "/dashboard/settings/organization", linkLabel: "Edit" },
+      { key: "buyerPersonas", label: "Target buyer personas", description: "Who are your ideal home buyers?", link: "/dashboard/settings/organization", linkLabel: "Edit" },
       { key: "marketsServed", label: "Geographic markets", description: "Cities and regions you build in", required: true, link: "/dashboard/settings/organization", linkLabel: "Edit" },
-      { key: "differentiators", label: "Key differentiators", description: "What makes you different from competitors?" },
+      { key: "differentiators", label: "Key differentiators", description: "What makes you different from competitors?", link: "/dashboard/settings/organization", linkLabel: "Edit" },
       { key: "brandAssets", label: "Brand assets", description: "Logo, colors, fonts, voice/tone guidance", link: "/dashboard/settings/organization", linkLabel: "Upload" },
     ],
   },
@@ -129,11 +136,11 @@ const sections: ChecklistSection[] = [
     color: "text-amber-500",
     description: "Configure incentives, commissions, and inventory homes",
     items: [
-      { key: "incentivesAdded", label: "Current incentives", description: "Active promotions, closing cost specials, upgrade packages", required: true },
-      { key: "coopCommission", label: "Co-op commission structure", description: "Realtor commission rates and terms", required: true },
-      { key: "preferredLender", label: "Preferred lender info", description: "Lender name and contact details" },
-      { key: "pricingContacts", label: "Pricing update contacts", description: "Who to contact for pricing changes", required: true },
-      { key: "inventoryAdded", label: "Quick move-in inventory", description: "Available inventory homes with pricing and move-in dates" },
+      { key: "incentivesAdded", label: "Current incentives", description: "Active promotions, closing cost specials, upgrade packages", required: true, link: "/dashboard/communities", linkLabel: "Manage Incentives" },
+      { key: "coopCommission", label: "Co-op commission structure", description: "Realtor commission rates and terms", required: true, link: "/dashboard/realtors", linkLabel: "Configure" },
+      { key: "preferredLender", label: "Preferred lender info", description: "Lender name and contact details", link: "/dashboard/settings/organization", linkLabel: "Edit" },
+      { key: "pricingContacts", label: "Pricing update contacts", description: "Who to contact for pricing changes", required: true, link: "/dashboard/settings/organization", linkLabel: "Edit" },
+      { key: "inventoryAdded", label: "Quick move-in inventory", description: "Available inventory homes with pricing and move-in dates", link: "/dashboard/inventory", linkLabel: "Manage Inventory" },
     ],
   },
   {
@@ -144,8 +151,8 @@ const sections: ChecklistSection[] = [
     description: "Connect your CRM and set up lead workflows",
     items: [
       { key: "crmConnected", label: "CRM connected", description: "HubSpot, Salesforce, or GoHighLevel", required: true, link: "/dashboard/crm", linkLabel: "Connect CRM" },
-      { key: "leadFlowSetup", label: "Lead flow configured", description: "How leads should flow from AI to your team" },
-      { key: "salesTeamAdded", label: "Sales team contacts", description: "List of sales agents with contact info" },
+      { key: "leadFlowSetup", label: "Lead flow configured", description: "How leads should flow from AI to your team", link: "/dashboard/crm", linkLabel: "Configure" },
+      { key: "salesTeamAdded", label: "Sales team contacts", description: "List of sales agents with contact info", link: "/dashboard/settings/organization", linkLabel: "Edit" },
     ],
   },
   {
@@ -155,9 +162,9 @@ const sections: ChecklistSection[] = [
     color: "text-teal-500",
     description: "Provide access for chatbot installation and analytics",
     items: [
-      { key: "websiteAccess", label: "Website admin access", description: "Login or invite for website management", required: true },
-      { key: "analyticsAccess", label: "Analytics access", description: "Google Analytics, GTM, Search Console access" },
-      { key: "chatbotPlacement", label: "Chatbot placement", description: "Where should the chatbot appear on your site?", link: "/dashboard/assistant", linkLabel: "Configure" },
+      { key: "websiteAccess", label: "Website admin access", description: "Login or invite for website management", required: true, link: "/dashboard/settings/organization", linkLabel: "Edit" },
+      { key: "analyticsAccess", label: "Analytics access", description: "Google Analytics, GTM, Search Console access", link: "/dashboard/settings/organization", linkLabel: "Edit" },
+      { key: "chatbotPlacement", label: "Chatbot configured", description: "Configure and deploy your website chatbot", link: "/dashboard/assistant", linkLabel: "Configure Chatbot" },
     ],
   },
   {
@@ -178,8 +185,8 @@ const sections: ChecklistSection[] = [
     description: "Set up AI-powered sales training and coaching",
     optional: true,
     items: [
-      { key: "salesAgentsAdded", label: "Sales agents registered", description: "Number of agents who will use training" },
-      { key: "trainingAssets", label: "Training assets uploaded", description: "Call recordings, scripts, objection handling docs" },
+      { key: "salesAgentsAdded", label: "Sales agents registered", description: "Number of agents who will use training", link: "/dashboard/training", linkLabel: "Start Training" },
+      { key: "trainingAssets", label: "Training assets uploaded", description: "Call recordings, scripts, objection handling docs", link: "/dashboard/training", linkLabel: "Upload" },
     ],
   },
   {
@@ -190,8 +197,8 @@ const sections: ChecklistSection[] = [
     description: "Configure the realtor-facing portal and resources",
     optional: true,
     items: [
-      { key: "realtorDatabase", label: "Realtor database", description: "List of realtors with contact info", link: "/dashboard/realtors", linkLabel: "Manage" },
-      { key: "realtorAssets", label: "Realtor assets", description: "Co-op flyers, materials, event info" },
+      { key: "realtorDatabase", label: "Realtor database", description: "List of realtors with contact info", link: "/dashboard/realtors", linkLabel: "Manage Realtors" },
+      { key: "realtorAssets", label: "Realtor assets", description: "Co-op flyers, materials, event info", link: "/dashboard/realtors", linkLabel: "Upload" },
     ],
   },
   {
@@ -201,9 +208,9 @@ const sections: ChecklistSection[] = [
     color: "text-violet-500",
     description: "Set up AI-powered content generation preferences",
     items: [
-      { key: "socialHandles", label: "Social media handles", description: "Facebook, Instagram, LinkedIn URLs" },
-      { key: "emailPlatform", label: "Email platform", description: "Mailchimp, Constant Contact, etc." },
-      { key: "contentPrefs", label: "Content preferences", description: "Posting frequency, style examples" },
+      { key: "socialHandles", label: "Social media handles", description: "Facebook, Instagram, LinkedIn URLs", link: "/dashboard/research/footprint", linkLabel: "Configure" },
+      { key: "emailPlatform", label: "Email platform", description: "Mailchimp, Constant Contact, etc.", link: "/dashboard/settings/organization", linkLabel: "Edit" },
+      { key: "contentPrefs", label: "Content preferences", description: "Posting frequency, style examples", link: "/dashboard/marketing", linkLabel: "Set Preferences" },
     ],
   },
   {
@@ -213,8 +220,8 @@ const sections: ChecklistSection[] = [
     color: "text-orange-500",
     description: "Define approval workflow and target launch date",
     items: [
-      { key: "approvalContacts", label: "Approval contacts", description: "Who approves chatbot and marketing content?", required: true },
-      { key: "launchDate", label: "Target launch date", description: "When do you want to go live?" },
+      { key: "approvalContacts", label: "Approval contacts", description: "Who approves chatbot and marketing content?", required: true, link: "/dashboard/settings/organization", linkLabel: "Edit" },
+      { key: "launchDate", label: "Target launch date", description: "When do you want to go live?", link: "/dashboard/settings/organization", linkLabel: "Set Date" },
     ],
   },
 ];
@@ -236,10 +243,15 @@ export function OnboardingChecklist({ organizationId, organizationName, initialP
 
   const toggleItem = async (key: keyof OnboardingProgress) => {
     if (key === "overallProgress") return;
-    
+
+    // Don't allow toggling auto-detected items - they sync automatically
+    if (autoDetectedKeys.has(key)) {
+      return;
+    }
+
     const newProgress = { ...progress, [key]: !progress[key] };
     setProgress(newProgress);
-    
+
     setSaving(true);
     try {
       await fetch("/api/onboarding", {
@@ -253,6 +265,8 @@ export function OnboardingChecklist({ organizationId, organizationName, initialP
       setSaving(false);
     }
   };
+
+  const isAutoDetected = (key: keyof OnboardingProgress) => autoDetectedKeys.has(key);
 
   const calculateSectionProgress = (section: ChecklistSection) => {
     const completed = section.items.filter(item => progress[item.key]).length;
@@ -349,6 +363,7 @@ export function OnboardingChecklist({ organizationId, organizationName, initialP
                 <div className="border-t border-gray-100 px-4 py-3 space-y-2">
                   {section.items.map((item) => {
                     const isChecked = progress[item.key];
+                    const isAuto = isAutoDetected(item.key);
 
                     return (
                       <div
@@ -360,12 +375,16 @@ export function OnboardingChecklist({ organizationId, organizationName, initialP
                       >
                         <button
                           onClick={() => toggleItem(item.key)}
+                          disabled={isAuto}
                           className={cn(
                             "mt-0.5 flex-shrink-0 h-5 w-5 rounded border-2 flex items-center justify-center transition-colors",
                             isChecked
                               ? "bg-green-500 border-green-500"
-                              : "border-gray-300 hover:border-gray-400"
+                              : "border-gray-300",
+                            !isAuto && !isChecked && "hover:border-gray-400 cursor-pointer",
+                            isAuto && "cursor-default"
                           )}
+                          title={isAuto ? "Auto-detected from your data" : "Click to mark complete"}
                         >
                           {isChecked && <Check className="h-3 w-3 text-white" />}
                         </button>
@@ -378,14 +397,23 @@ export function OnboardingChecklist({ organizationId, organizationName, initialP
                               {item.label}
                             </span>
                             {item.required && (
-                              <span className="text-xs text-red-500">*</span>
+                              <span className="text-xs text-red-500 font-medium">Required</span>
+                            )}
+                            {isAuto && (
+                              <span className="text-xs px-1.5 py-0.5 bg-blue-100 text-blue-700 rounded-full">
+                                Auto-sync
+                              </span>
                             )}
                           </div>
                           <p className="text-sm text-gray-500">{item.description}</p>
                         </div>
                         {item.link && (
                           <Link href={item.link}>
-                            <Button variant="outline" size="sm">
+                            <Button
+                              variant={isChecked ? "outline" : "default"}
+                              size="sm"
+                              className={cn(!isChecked && "bg-blue-600 hover:bg-blue-700")}
+                            >
                               {item.linkLabel || "Go"}
                             </Button>
                           </Link>

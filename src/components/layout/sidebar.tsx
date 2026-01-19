@@ -28,6 +28,7 @@ import {
   X,
   Plus,
   UserPlus,
+  Package,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -96,6 +97,13 @@ const navSections: NavSection[] = [
         href: "/dashboard/floorplans",
         icon: Home,
         description: "Home designs",
+      },
+      {
+        name: "Inventory",
+        href: "/dashboard/inventory",
+        icon: Package,
+        description: "Quick move-in homes",
+        color: "text-orange-500",
       },
       {
         name: "Leads",
@@ -227,6 +235,24 @@ export function Sidebar({ user }: SidebarProps) {
 
       {/* Quick Actions */}
       <div className="px-4 py-3 border-b border-gray-100">
+        {/* Command Palette Hint */}
+        <button
+          onClick={() => {
+            const event = new KeyboardEvent("keydown", {
+              key: "k",
+              metaKey: true,
+              bubbles: true,
+            });
+            document.dispatchEvent(event);
+          }}
+          className="w-full mb-2 flex items-center gap-2 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-500 hover:bg-gray-100 hover:text-gray-700 transition-colors"
+        >
+          <Search className="h-4 w-4" />
+          <span className="flex-1 text-left">Quick search...</span>
+          <kbd className="hidden sm:inline-flex h-5 items-center gap-1 rounded border border-gray-300 bg-white px-1.5 text-[10px] font-medium text-gray-500">
+            ⌘K
+          </kbd>
+        </button>
         <div className="flex gap-2">
           <Link href="/dashboard/communities/new" className="flex-1">
             <Button variant="outline" size="sm" className="w-full gap-1.5 text-xs">
@@ -234,10 +260,10 @@ export function Sidebar({ user }: SidebarProps) {
               Community
             </Button>
           </Link>
-          <Link href="/dashboard/leads" className="flex-1">
+          <Link href="/dashboard/inventory" className="flex-1">
             <Button variant="outline" size="sm" className="w-full gap-1.5 text-xs">
-              <UserPlus className="h-3.5 w-3.5" />
-              Lead
+              <Package className="h-3.5 w-3.5" />
+              Inventory
             </Button>
           </Link>
         </div>

@@ -96,3 +96,99 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Failed to create lead" }, { status: 500 });
   }
 }
+
+// Bulk update endpoint for status changes
+export async function PATCH(request: NextRequest) {
+  try {
+    const session = await auth();
+    if (!session?.user?.organizationId) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const body = await request.json();
+    const { ids, status, action } = body;
+
+    if (!Array.isArray(ids) || ids.length === 0) {
+      return NextResponse.json(
+        { error: "No lead IDs provided" },
+        { status: 400 }
+      );
+    }
+
+    // Handle bulk delete
+    if (action === "delete") {
+      // Verify all leads belong to user's organization
+      const leads = await prisma.lead.findMany({
+        where: {
+          id: { in: ids },
+          organizationId: session.user.organizationId,
+        },
+        select: { id: true },
+      });
+
+      if (leads.length !== ids.length) {
+        return NextResponse.json(
+          { error: "Some leads not found or access denied" },
+          { status: 403 }
+        );
+      }
+
+      const result = await prisma.lead.deleteMany({
+        where: {
+          id: { in: ids },
+          organizationId: session.user.organizationId,
+        },
+      });
+
+      return NextResponse.json({
+        success: true,
+        deleted: result.count,
+      });
+    }
+
+    // Handle bulk status update
+    const validStatuses = ["new", "contacted", "qualified", "nurturing", "closed_won", "closed_lost"];
+    if (!validStatuses.includes(status)) {
+      return NextResponse.json(
+        { error: "Invalid status" },
+        { status: 400 }
+      );
+    }
+
+    // Verify all leads belong to user's organization
+    const leads = await prisma.lead.findMany({
+      where: {
+        id: { in: ids },
+        organizationId: session.user.organizationId,
+      },
+      select: { id: true },
+    });
+
+    if (leads.length !== ids.length) {
+      return NextResponse.json(
+        { error: "Some leads not found or access denied" },
+        { status: 403 }
+      );
+    }
+
+    // Bulk update
+    const result = await prisma.lead.updateMany({
+      where: {
+        id: { in: ids },
+        organizationId: session.user.organizationId,
+      },
+      data: { status },
+    });
+
+    return NextResponse.json({
+      success: true,
+      updated: result.count,
+    });
+  } catch (error) {
+    console.error("Error bulk updating leads:", error);
+    return NextResponse.json(
+      { error: "Failed to update leads" },
+      { status: 500 }
+    );
+  }
+}

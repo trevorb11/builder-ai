@@ -46,12 +46,13 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    // Perform the research
+    // Perform the research with builder context for personalized content strategy
     try {
       const result = await getContentStrategy(
         organization.name,
         markets,
-        audience
+        audience,
+        session.user.organizationId
       );
 
       // Update the report with results

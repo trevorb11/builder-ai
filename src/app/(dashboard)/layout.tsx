@@ -1,6 +1,7 @@
 import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { Sidebar } from "@/components/layout/sidebar";
+import { DashboardClient } from "@/components/layout/dashboard-client";
 
 export default async function DashboardLayout({
   children,
@@ -14,11 +15,13 @@ export default async function DashboardLayout({
   }
 
   return (
-    <div className="flex h-screen bg-gray-50">
-      <Sidebar user={session.user} />
-      <main className="flex-1 overflow-y-auto pt-14 lg:pt-0">
-        {children}
-      </main>
-    </div>
+    <DashboardClient>
+      <div className="flex h-screen bg-gray-50">
+        <Sidebar user={session.user} />
+        <main className="flex-1 overflow-y-auto pt-14 lg:pt-0">
+          {children}
+        </main>
+      </div>
+    </DashboardClient>
   );
 }

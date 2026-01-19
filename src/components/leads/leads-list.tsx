@@ -21,9 +21,16 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
   Mail,
   Phone,
-  Calendar,
   MessageSquare,
   Edit,
   Eye,
@@ -31,6 +38,13 @@ import {
   MapPin,
   Star,
   Clock,
+  Trash2,
+  CheckCircle2,
+  XCircle,
+  Circle,
+  ArrowRight,
+  Users,
+  X,
 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 
@@ -66,18 +80,97 @@ interface LeadsListProps {
 }
 
 const statusOptions = [
-  { value: "new", label: "New", color: "bg-blue-100 text-blue-800" },
-  { value: "contacted", label: "Contacted", color: "bg-yellow-100 text-yellow-800" },
-  { value: "qualified", label: "Qualified", color: "bg-purple-100 text-purple-800" },
-  { value: "nurturing", label: "Nurturing", color: "bg-orange-100 text-orange-800" },
-  { value: "closed_won", label: "Won", color: "bg-green-100 text-green-800" },
-  { value: "closed_lost", label: "Lost", color: "bg-gray-100 text-gray-800" },
+  { value: "new", label: "New", color: "bg-blue-100 text-blue-800", icon: Circle },
+  { value: "contacted", label: "Contacted", color: "bg-yellow-100 text-yellow-800", icon: ArrowRight },
+  { value: "qualified", label: "Qualified", color: "bg-purple-100 text-purple-800", icon: CheckCircle2 },
+  { value: "nurturing", label: "Nurturing", color: "bg-orange-100 text-orange-800", icon: Users },
+  { value: "closed_won", label: "Won", color: "bg-green-100 text-green-800", icon: CheckCircle2 },
+  { value: "closed_lost", label: "Lost", color: "bg-gray-100 text-gray-800", icon: XCircle },
 ];
 
 export function LeadsList({ leads, organizationId }: LeadsListProps) {
+  const [items, setItems] = useState(leads);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
   const [editLead, setEditLead] = useState<Lead | null>(null);
+  const [deleteConfirm, setDeleteConfirm] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
+  const [isBulkUpdating, setIsBulkUpdating] = useState(false);
+
+  const handleSelectAll = (checked: boolean) => {
+    if (checked) {
+      setSelectedIds(new Set(items.map((item) => item.id)));
+    } else {
+      setSelectedIds(new Set());
+    }
+  };
+
+  const handleSelectOne = (id: string, checked: boolean) => {
+    const newSelected = new Set(selectedIds);
+    if (checked) {
+      newSelected.add(id);
+    } else {
+      newSelected.delete(id);
+    }
+    setSelectedIds(newSelected);
+  };
+
+  const handleBulkStatusUpdate = async (newStatus: string) => {
+    if (selectedIds.size === 0) return;
+
+    setIsBulkUpdating(true);
+    try {
+      const response = await fetch("/api/leads", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ids: Array.from(selectedIds),
+          status: newStatus,
+        }),
+      });
+
+      if (response.ok) {
+        // Update local state
+        setItems((prev) =>
+          prev.map((item) =>
+            selectedIds.has(item.id) ? { ...item, status: newStatus } : item
+          )
+        );
+        setSelectedIds(new Set());
+      }
+    } catch (error) {
+      console.error("Failed to bulk update:", error);
+    } finally {
+      setIsBulkUpdating(false);
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedIds.size === 0) return;
+
+    setIsBulkUpdating(true);
+    try {
+      const response = await fetch("/api/leads", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ids: Array.from(selectedIds),
+          action: "delete",
+        }),
+      });
+
+      if (response.ok) {
+        // Update local state
+        setItems((prev) => prev.filter((item) => !selectedIds.has(item.id)));
+        setSelectedIds(new Set());
+        setDeleteConfirm(false);
+      }
+    } catch (error) {
+      console.error("Failed to bulk delete:", error);
+    } finally {
+      setIsBulkUpdating(false);
+    }
+  };
 
   const handleUpdate = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -117,6 +210,11 @@ export function LeadsList({ leads, organizationId }: LeadsListProps) {
     return statusOptions.find((s) => s.value === status)?.color || "bg-gray-100 text-gray-800";
   };
 
+  const getStatusIcon = (status: string) => {
+    const option = statusOptions.find((s) => s.value === status);
+    return option?.icon || Circle;
+  };
+
   const getSentimentColor = (sentiment: string | null) => {
     switch (sentiment) {
       case "positive":
@@ -128,7 +226,7 @@ export function LeadsList({ leads, organizationId }: LeadsListProps) {
     }
   };
 
-  if (leads.length === 0) {
+  if (items.length === 0) {
     return (
       <div className="text-center py-12">
         <MessageSquare className="mx-auto h-12 w-12 text-gray-400" />
@@ -142,13 +240,87 @@ export function LeadsList({ leads, organizationId }: LeadsListProps) {
 
   return (
     <>
-      <div className="space-y-3 mt-4">
-        {leads.map((lead) => (
+      {/* Bulk Actions Bar */}
+      {selectedIds.size > 0 && (
+        <div className="mb-4 flex items-center gap-3 bg-blue-50 px-4 py-3 rounded-lg border border-blue-200">
+          <span className="text-sm font-medium text-blue-800">
+            {selectedIds.size} lead{selectedIds.size > 1 ? "s" : ""} selected
+          </span>
+          <div className="flex items-center gap-2">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button size="sm" variant="secondary" disabled={isBulkUpdating}>
+                  {isBulkUpdating ? "Updating..." : "Change Status"}
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent>
+                {statusOptions.map((option) => {
+                  const Icon = option.icon;
+                  return (
+                    <DropdownMenuItem
+                      key={option.value}
+                      onClick={() => handleBulkStatusUpdate(option.value)}
+                    >
+                      <Icon className="h-4 w-4 mr-2" />
+                      Mark as {option.label}
+                    </DropdownMenuItem>
+                  );
+                })}
+              </DropdownMenuContent>
+            </DropdownMenu>
+            <Button
+              size="sm"
+              variant="outline"
+              className="text-red-600 hover:text-red-700 hover:bg-red-50"
+              onClick={() => setDeleteConfirm(true)}
+              disabled={isBulkUpdating}
+            >
+              <Trash2 className="h-4 w-4 mr-1" />
+              Delete
+            </Button>
+          </div>
+          <Button
+            size="sm"
+            variant="ghost"
+            className="ml-auto"
+            onClick={() => setSelectedIds(new Set())}
+          >
+            <X className="h-4 w-4 mr-1" />
+            Cancel
+          </Button>
+        </div>
+      )}
+
+      {/* Select All */}
+      <div className="mb-2 flex items-center gap-2 px-2">
+        <Checkbox
+          id="select-all"
+          checked={selectedIds.size === items.length && items.length > 0}
+          onCheckedChange={handleSelectAll}
+        />
+        <Label htmlFor="select-all" className="text-sm text-gray-500 cursor-pointer">
+          Select all ({items.length})
+        </Label>
+      </div>
+
+      {/* Lead List */}
+      <div className="space-y-3">
+        {items.map((lead) => (
           <div
             key={lead.id}
-            className="border rounded-lg p-4 hover:border-gray-300 transition-colors"
+            className={`border rounded-lg p-4 transition-all ${
+              selectedIds.has(lead.id)
+                ? "border-blue-500 bg-blue-50/50 ring-1 ring-blue-500"
+                : "hover:border-gray-300"
+            }`}
           >
-            <div className="flex items-start justify-between gap-4">
+            <div className="flex items-start gap-4">
+              <Checkbox
+                checked={selectedIds.has(lead.id)}
+                onCheckedChange={(checked) => handleSelectOne(lead.id, !!checked)}
+                className="mt-1"
+              />
+
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-3 mb-2">
                   <h3 className="font-semibold truncate">
@@ -247,6 +419,30 @@ export function LeadsList({ leads, organizationId }: LeadsListProps) {
           </div>
         ))}
       </div>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={deleteConfirm} onOpenChange={setDeleteConfirm}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete {selectedIds.size} Lead{selectedIds.size > 1 ? "s" : ""}?</DialogTitle>
+            <DialogDescription>
+              This action cannot be undone. All selected leads and their conversation history will be permanently deleted.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex justify-end gap-2">
+            <Button variant="outline" onClick={() => setDeleteConfirm(false)}>
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleBulkDelete}
+              disabled={isBulkUpdating}
+            >
+              {isBulkUpdating ? "Deleting..." : "Delete Leads"}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* View Lead Dialog */}
       <Dialog open={!!selectedLead} onOpenChange={() => setSelectedLead(null)}>

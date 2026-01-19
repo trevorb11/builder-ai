@@ -84,10 +84,14 @@ export function FloorplanList({ floorplans, communities }: FloorplanListProps) {
           description: formData.get("description"),
           bedrooms: parseInt(formData.get("bedrooms") as string),
           bathrooms: parseFloat(formData.get("bathrooms") as string),
+          halfBaths: parseInt(formData.get("halfBaths") as string) || 0,
           squareFeet: parseInt(formData.get("squareFeet") as string),
+          stories: parseInt(formData.get("stories") as string) || 1,
+          garageSpaces: parseInt(formData.get("garageSpaces") as string) || 2,
           basePrice: parseFloat(formData.get("basePrice") as string),
           status: formData.get("status"),
           communityId: formData.get("communityId") || null,
+          features: formData.get("features") || null,
         }),
       });
 
@@ -99,6 +103,16 @@ export function FloorplanList({ floorplans, communities }: FloorplanListProps) {
       console.error("Failed to update floorplan:", error);
     } finally {
       setIsEditing(false);
+    }
+  };
+
+  const parseFeatures = (featuresJson: string | null): string => {
+    if (!featuresJson) return "";
+    try {
+      const features = JSON.parse(featuresJson);
+      return Array.isArray(features) ? features.join(", ") : "";
+    } catch {
+      return "";
     }
   };
 
@@ -233,7 +247,7 @@ export function FloorplanList({ floorplans, communities }: FloorplanListProps) {
 
       {/* Edit Dialog */}
       <Dialog open={!!editFloorplan} onOpenChange={() => setEditFloorplan(null)}>
-        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Edit Floorplan</DialogTitle>
             <DialogDescription>
@@ -241,106 +255,185 @@ export function FloorplanList({ floorplans, communities }: FloorplanListProps) {
             </DialogDescription>
           </DialogHeader>
           {editFloorplan && (
-            <form onSubmit={handleEdit} className="space-y-4">
-              <div>
-                <Label htmlFor="name">Floorplan Name</Label>
-                <Input
-                  id="name"
-                  name="name"
-                  defaultValue={editFloorplan.name}
-                  required
-                />
-              </div>
+            <form onSubmit={handleEdit} className="space-y-6">
+              {/* Basic Info */}
+              <div className="space-y-4">
+                <h3 className="font-medium text-gray-900 border-b pb-2">Basic Information</h3>
 
-              <div>
-                <Label htmlFor="description">Description</Label>
-                <Textarea
-                  id="description"
-                  name="description"
-                  defaultValue={editFloorplan.description || ""}
-                  rows={2}
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="communityId">Community</Label>
-                <Select name="communityId" defaultValue={editFloorplan.community?.id || ""}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select community" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="">No community</SelectItem>
-                    {communities.map((c) => (
-                      <SelectItem key={c.id} value={c.id}>
-                        {c.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="bedrooms">Bedrooms</Label>
-                  <Input
-                    id="bedrooms"
-                    name="bedrooms"
-                    type="number"
-                    defaultValue={editFloorplan.bedrooms}
-                    required
-                  />
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div>
+                    <Label htmlFor="name">Floorplan Name *</Label>
+                    <Input
+                      id="name"
+                      name="name"
+                      defaultValue={editFloorplan.name}
+                      required
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="communityId">Community</Label>
+                    <Select name="communityId" defaultValue={editFloorplan.community?.id || ""}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select community" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="">No community</SelectItem>
+                        {communities.map((c) => (
+                          <SelectItem key={c.id} value={c.id}>
+                            {c.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
+
                 <div>
-                  <Label htmlFor="bathrooms">Bathrooms</Label>
-                  <Input
-                    id="bathrooms"
-                    name="bathrooms"
-                    type="number"
-                    step="0.5"
-                    defaultValue={editFloorplan.bathrooms}
-                    required
+                  <Label htmlFor="description">Description</Label>
+                  <Textarea
+                    id="description"
+                    name="description"
+                    defaultValue={editFloorplan.description || ""}
+                    rows={2}
                   />
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="squareFeet">Square Feet</Label>
-                  <Input
-                    id="squareFeet"
-                    name="squareFeet"
-                    type="number"
-                    defaultValue={editFloorplan.squareFeet}
-                    required
-                  />
+              {/* Specifications */}
+              <div className="space-y-4">
+                <h3 className="font-medium text-gray-900 border-b pb-2">Specifications</h3>
+
+                <div className="grid gap-4 sm:grid-cols-3">
+                  <div>
+                    <Label htmlFor="bedrooms">Bedrooms *</Label>
+                    <Input
+                      id="bedrooms"
+                      name="bedrooms"
+                      type="number"
+                      min="1"
+                      defaultValue={editFloorplan.bedrooms}
+                      required
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="bathrooms">Full Bathrooms *</Label>
+                    <Input
+                      id="bathrooms"
+                      name="bathrooms"
+                      type="number"
+                      step="0.5"
+                      min="0.5"
+                      defaultValue={editFloorplan.bathrooms}
+                      required
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="halfBaths">Half Baths</Label>
+                    <Input
+                      id="halfBaths"
+                      name="halfBaths"
+                      type="number"
+                      min="0"
+                      defaultValue={editFloorplan.halfBaths}
+                    />
+                  </div>
                 </div>
-                <div>
-                  <Label htmlFor="basePrice">Base Price</Label>
-                  <Input
-                    id="basePrice"
-                    name="basePrice"
-                    type="number"
-                    defaultValue={editFloorplan.basePrice}
-                    required
-                  />
+
+                <div className="grid gap-4 sm:grid-cols-3">
+                  <div>
+                    <Label htmlFor="squareFeet">Square Feet *</Label>
+                    <Input
+                      id="squareFeet"
+                      name="squareFeet"
+                      type="number"
+                      min="100"
+                      defaultValue={editFloorplan.squareFeet}
+                      required
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="stories">Stories</Label>
+                    <Select name="stories" defaultValue={String(editFloorplan.stories)}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="1">1 Story</SelectItem>
+                        <SelectItem value="2">2 Stories</SelectItem>
+                        <SelectItem value="3">3 Stories</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label htmlFor="garageSpaces">Garage Spaces</Label>
+                    <Select name="garageSpaces" defaultValue={String(editFloorplan.garageSpaces)}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="0">No Garage</SelectItem>
+                        <SelectItem value="1">1 Car</SelectItem>
+                        <SelectItem value="2">2 Car</SelectItem>
+                        <SelectItem value="3">3 Car</SelectItem>
+                        <SelectItem value="4">4 Car</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
               </div>
 
-              <div>
-                <Label htmlFor="status">Status</Label>
-                <Select name="status" defaultValue={editFloorplan.status}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="active">Active</SelectItem>
-                    <SelectItem value="inactive">Inactive</SelectItem>
-                    <SelectItem value="coming_soon">Coming Soon</SelectItem>
-                  </SelectContent>
-                </Select>
+              {/* Pricing & Status */}
+              <div className="space-y-4">
+                <h3 className="font-medium text-gray-900 border-b pb-2">Pricing & Status</h3>
+
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div>
+                    <Label htmlFor="basePrice">Base Price *</Label>
+                    <Input
+                      id="basePrice"
+                      name="basePrice"
+                      type="number"
+                      min="0"
+                      defaultValue={editFloorplan.basePrice}
+                      required
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="status">Status</Label>
+                    <Select name="status" defaultValue={editFloorplan.status}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="active">Active</SelectItem>
+                        <SelectItem value="inactive">Inactive</SelectItem>
+                        <SelectItem value="coming_soon">Coming Soon</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
               </div>
 
-              <div className="flex justify-end gap-2">
+              {/* Features */}
+              <div className="space-y-4">
+                <h3 className="font-medium text-gray-900 border-b pb-2">Features</h3>
+
+                <div>
+                  <Label htmlFor="features">Key Features</Label>
+                  <Textarea
+                    id="features"
+                    name="features"
+                    defaultValue={parseFeatures(editFloorplan.features)}
+                    placeholder="Open concept layout, Gourmet kitchen, Master suite..."
+                    rows={2}
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Separate features with commas
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex justify-end gap-2 pt-4 border-t">
                 <Button
                   type="button"
                   variant="outline"

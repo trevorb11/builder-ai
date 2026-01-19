@@ -104,15 +104,15 @@ export default async function MarketingPage() {
     await getMarketingData(organizationId);
 
   return (
-    <div className="p-8">
-      <div className="mb-8">
-        <div className="flex items-center gap-3">
-          <div className="rounded-lg bg-purple-500 p-2">
-            <FileEdit className="h-6 w-6 text-white" />
+    <div className="p-4 sm:p-6 lg:p-8">
+      <div className="mb-6 sm:mb-8">
+        <div className="flex items-start sm:items-center gap-3">
+          <div className="rounded-lg bg-purple-500 p-2 flex-shrink-0">
+            <FileEdit className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
           </div>
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">Marketing Assistant</h1>
-            <p className="text-gray-600">
+          <div className="min-w-0">
+            <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Marketing Assistant</h1>
+            <p className="text-sm sm:text-base text-gray-600">
               Generate content using your builder data and brand voice
             </p>
           </div>
@@ -120,7 +120,7 @@ export default async function MarketingPage() {
       </div>
 
       {/* Content Type Stats */}
-      <div className="mb-8 grid gap-4 md:grid-cols-3 lg:grid-cols-6">
+      <div className="mb-6 sm:mb-8 grid gap-3 sm:gap-4 grid-cols-2 sm:grid-cols-3 lg:grid-cols-6">
         {contentTypesWithIcons.map((type) => {
           const count =
             contentStats.find((s) => s.type === type.id)?._count || 0;
@@ -144,15 +144,17 @@ export default async function MarketingPage() {
       </div>
 
       {/* Main Content */}
-      <Tabs defaultValue="generate" className="space-y-6">
-        <TabsList>
-          <TabsTrigger value="generate" className="gap-2">
-            <FileEdit className="h-4 w-4" />
-            Generate Content
+      <Tabs defaultValue="generate" className="space-y-4 sm:space-y-6">
+        <TabsList className="w-full sm:w-auto h-auto gap-1 p-1">
+          <TabsTrigger value="generate" className="gap-1.5 sm:gap-2 text-xs sm:text-sm flex-1 sm:flex-initial">
+            <FileEdit className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+            <span className="hidden sm:inline">Generate Content</span>
+            <span className="sm:hidden">Generate</span>
           </TabsTrigger>
-          <TabsTrigger value="library" className="gap-2">
-            <History className="h-4 w-4" />
-            Content Library
+          <TabsTrigger value="library" className="gap-1.5 sm:gap-2 text-xs sm:text-sm flex-1 sm:flex-initial">
+            <History className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+            <span className="hidden sm:inline">Content Library</span>
+            <span className="sm:hidden">Library</span>
           </TabsTrigger>
         </TabsList>
 
