@@ -945,22 +945,33 @@ Which style works better for your audience?"
 };
 
 // Helper function to build context from builder data
+// This function aggregates ALL onboarding data for AI context
 export async function buildBuilderContext(organizationId: string): Promise<string> {
   const { prisma } = await import("./db");
 
-  const [organization, communities, floorplans, incentives] = await Promise.all([
+  const [
+    organization,
+    communities,
+    floorplans,
+    incentives,
+    inventoryHomes,
+    competitors,
+    leads,
+    crmIntegrations,
+  ] = await Promise.all([
     prisma.organization.findUnique({
       where: { id: organizationId },
     }),
     prisma.community.findMany({
-      where: { organizationId, status: "active" },
+      where: { organizationId },
       include: {
         floorplans: true,
         incentives: { where: { isActive: true } },
+        inventoryHomes: { where: { status: "available" } },
       },
     }),
     prisma.floorplan.findMany({
-      where: { organizationId, status: "active" },
+      where: { organizationId },
     }),
     prisma.incentive.findMany({
       where: {
@@ -968,41 +979,210 @@ export async function buildBuilderContext(organizationId: string): Promise<strin
         isActive: true,
       },
     }),
+    prisma.inventoryHome.findMany({
+      where: { organizationId, status: "available" },
+      include: {
+        community: { select: { name: true } },
+        floorplan: { select: { name: true, bedrooms: true, bathrooms: true, squareFeet: true } },
+      },
+    }),
+    prisma.competitor.findMany({
+      where: { organizationId },
+      include: {
+        communities: true,
+      },
+    }),
+    prisma.lead.findMany({
+      where: { organizationId },
+      orderBy: { createdAt: "desc" },
+      take: 100,
+    }),
+    prisma.cRMIntegration.findMany({
+      where: { organizationId, isActive: true },
+    }),
   ]);
 
-  let context = `Builder: ${organization?.name}\n\n`;
+  let context = "";
 
-  context += "COMMUNITIES:\n";
-  for (const community of communities) {
-    context += `\n${community.name}\n`;
-    context += `- Location: ${community.city}, ${community.state}\n`;
-    context += `- Starting Price: $${community.startingPrice?.toLocaleString() || "Contact for pricing"}\n`;
-    context += `- Description: ${community.description || "N/A"}\n`;
-    if (community.amenities) {
-      context += `- Amenities: ${community.amenities}\n`;
-    }
+  // ==========================================
+  // COMPANY PROFILE
+  // ==========================================
+  context += "=== COMPANY PROFILE ===\n";
+  context += `Builder Name: ${organization?.name || "Unknown"}\n`;
+  if (organization?.website) {
+    context += `Website: ${organization.website}\n`;
+  }
+  if (organization?.tagline) {
+    context += `Tagline: ${organization.tagline}\n`;
+  }
+  if (organization?.description) {
+    context += `About: ${organization.description}\n`;
+  }
+  if (organization?.marketsServed) {
+    context += `Markets Served: ${organization.marketsServed}\n`;
+  }
+  if (organization?.buyerPersonas) {
+    context += `Target Buyers: ${organization.buyerPersonas}\n`;
+  }
+  if (organization?.differentiators) {
+    context += `What Sets Us Apart: ${organization.differentiators}\n`;
+  }
+  if (organization?.brandVoice) {
+    context += `Brand Voice: ${organization.brandVoice}\n`;
   }
 
-  context += "\n\nFLOORPLANS:\n";
-  for (const plan of floorplans) {
-    context += `\n${plan.name}\n`;
-    context += `- ${plan.bedrooms} beds, ${plan.bathrooms} baths\n`;
-    context += `- ${plan.squareFeet.toLocaleString()} sq ft\n`;
-    context += `- Base Price: $${plan.basePrice.toLocaleString()}\n`;
-    context += `- Stories: ${plan.stories}, Garage: ${plan.garageSpaces}-car\n`;
-    if (plan.description) {
-      context += `- Description: ${plan.description}\n`;
-    }
-  }
-
-  if (incentives.length > 0) {
-    context += "\n\nCURRENT INCENTIVES:\n";
-    for (const incentive of incentives) {
-      context += `\n${incentive.title}\n`;
-      context += `- ${incentive.description}\n`;
-      if (incentive.value) {
-        context += `- Value: ${incentive.value}\n`;
+  // ==========================================
+  // COMMUNITIES
+  // ==========================================
+  context += "\n=== COMMUNITIES ===\n";
+  if (communities.length === 0) {
+    context += "No communities added yet.\n";
+  } else {
+    for (const community of communities) {
+      context += `\n📍 ${community.name} (${community.status})\n`;
+      context += `   Location: ${community.address || ""} ${community.city}, ${community.state} ${community.zip || ""}\n`;
+      if (community.startingPrice) {
+        context += `   Starting From: $${community.startingPrice.toLocaleString()}\n`;
       }
+      if (community.priceRange) {
+        context += `   Price Range: ${community.priceRange}\n`;
+      }
+      if (community.description) {
+        context += `   Description: ${community.description}\n`;
+      }
+      if (community.amenities) {
+        const amenities = typeof community.amenities === 'string'
+          ? community.amenities
+          : JSON.stringify(community.amenities);
+        context += `   Amenities: ${amenities}\n`;
+      }
+      if (community.hoaFees) {
+        context += `   HOA Fees: $${community.hoaFees}/month\n`;
+      }
+      context += `   Floorplans Available: ${community.floorplans?.length || 0}\n`;
+      context += `   Quick Move-In Homes: ${community.inventoryHomes?.length || 0}\n`;
+      if (community.incentives && community.incentives.length > 0) {
+        context += `   Active Incentives: ${community.incentives.map(i => i.title).join(", ")}\n`;
+      }
+    }
+  }
+
+  // ==========================================
+  // FLOORPLANS
+  // ==========================================
+  context += "\n=== FLOORPLANS ===\n";
+  if (floorplans.length === 0) {
+    context += "No floorplans added yet.\n";
+  } else {
+    for (const plan of floorplans) {
+      context += `\n🏠 ${plan.name} (${plan.status})\n`;
+      context += `   Specs: ${plan.bedrooms} bed, ${plan.bathrooms} bath, ${plan.squareFeet.toLocaleString()} sqft\n`;
+      context += `   Stories: ${plan.stories} | Garage: ${plan.garageSpaces}-car\n`;
+      context += `   Base Price: $${plan.basePrice.toLocaleString()}\n`;
+      if (plan.description) {
+        context += `   Description: ${plan.description}\n`;
+      }
+      if (plan.features) {
+        const features = typeof plan.features === 'string'
+          ? plan.features
+          : JSON.stringify(plan.features);
+        context += `   Key Features: ${features}\n`;
+      }
+    }
+  }
+
+  // ==========================================
+  // QUICK MOVE-IN INVENTORY
+  // ==========================================
+  context += "\n=== QUICK MOVE-IN INVENTORY ===\n";
+  if (inventoryHomes.length === 0) {
+    context += "No available inventory homes.\n";
+  } else {
+    for (const home of inventoryHomes) {
+      context += `\n🏡 ${home.address || `Lot ${home.lotNumber}`} at ${home.community?.name}\n`;
+      context += `   Floorplan: ${home.floorplan?.name || "Custom"}\n`;
+      if (home.floorplan) {
+        context += `   Specs: ${home.floorplan.bedrooms} bed, ${home.floorplan.bathrooms} bath, ${home.floorplan.squareFeet?.toLocaleString() || "N/A"} sqft\n`;
+      }
+      context += `   Price: $${home.price?.toLocaleString() || "Call for pricing"}\n`;
+      context += `   Status: ${home.status}\n`;
+      if (home.moveInDate) {
+        context += `   Move-In Ready: ${new Date(home.moveInDate).toLocaleDateString()}\n`;
+      }
+      if (home.features) {
+        context += `   Included Features: ${home.features}\n`;
+      }
+      if (home.specialNotes) {
+        context += `   Special Notes: ${home.specialNotes}\n`;
+      }
+    }
+  }
+
+  // ==========================================
+  // CURRENT INCENTIVES
+  // ==========================================
+  if (incentives.length > 0) {
+    context += "\n=== CURRENT INCENTIVES & PROMOTIONS ===\n";
+    for (const incentive of incentives) {
+      context += `\n🎁 ${incentive.title}\n`;
+      context += `   ${incentive.description}\n`;
+      if (incentive.value) {
+        context += `   Value: ${incentive.value}\n`;
+      }
+      if (incentive.expiresAt) {
+        context += `   Expires: ${new Date(incentive.expiresAt).toLocaleDateString()}\n`;
+      }
+    }
+  }
+
+  // ==========================================
+  // COMPETITORS
+  // ==========================================
+  if (competitors.length > 0) {
+    context += "\n=== TRACKED COMPETITORS ===\n";
+    for (const competitor of competitors) {
+      context += `\n🏢 ${competitor.name}\n`;
+      if (competitor.website) {
+        context += `   Website: ${competitor.website}\n`;
+      }
+      if (competitor.description) {
+        context += `   Notes: ${competitor.description}\n`;
+      }
+      if (competitor.communities && competitor.communities.length > 0) {
+        context += `   Known Communities: ${competitor.communities.map(c => c.name).join(", ")}\n`;
+      }
+    }
+  }
+
+  // ==========================================
+  // LEAD SOURCES & METRICS
+  // ==========================================
+  if (leads.length > 0) {
+    context += "\n=== LEAD INSIGHTS ===\n";
+
+    // Calculate lead source distribution
+    const sourceCount: Record<string, number> = {};
+    const statusCount: Record<string, number> = {};
+
+    for (const lead of leads) {
+      const source = lead.source || "Unknown";
+      const status = lead.status || "new";
+      sourceCount[source] = (sourceCount[source] || 0) + 1;
+      statusCount[status] = (statusCount[status] || 0) + 1;
+    }
+
+    context += `Total Leads: ${leads.length}\n`;
+    context += `By Status: ${Object.entries(statusCount).map(([s, c]) => `${s}: ${c}`).join(", ")}\n`;
+    context += `Top Sources: ${Object.entries(sourceCount).sort((a, b) => b[1] - a[1]).slice(0, 5).map(([s, c]) => `${s}: ${c}`).join(", ")}\n`;
+  }
+
+  // ==========================================
+  // CRM INTEGRATIONS
+  // ==========================================
+  if (crmIntegrations.length > 0) {
+    context += "\n=== CRM INTEGRATIONS ===\n";
+    for (const crm of crmIntegrations) {
+      context += `Connected: ${crm.provider} (${crm.status})\n`;
     }
   }
 
