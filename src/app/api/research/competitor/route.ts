@@ -52,12 +52,13 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    // Perform the research
+    // Perform the research with builder context for personalized comparison
     try {
       const result = await researchCompetitor(
         organization.name,
         competitorName,
-        researchCriteria
+        researchCriteria,
+        session.user.organizationId
       );
 
       // Update the report with results

@@ -43,11 +43,12 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    // Perform the research asynchronously
+    // Perform the research asynchronously with builder context for personalized analysis
     try {
       const result = await analyzeDigitalFootprint(
         organization.name,
         websiteUrl,
+        session.user.organizationId,
         socialProfiles
       );
 
