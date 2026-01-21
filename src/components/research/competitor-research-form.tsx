@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -65,6 +65,7 @@ const researchCriteria = [
 export function CompetitorResearchForm({
   existingCompetitors = [],
 }: CompetitorResearchFormProps) {
+  const [mounted, setMounted] = useState(false);
   const [isResearching, setIsResearching] = useState(false);
   const [competitorName, setCompetitorName] = useState("");
   const [selectedCriteria, setSelectedCriteria] = useState<string[]>([
@@ -73,6 +74,10 @@ export function CompetitorResearchForm({
     "marketing",
   ]);
   const [recentSearches, setRecentSearches] = useState<string[]>([]);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const handleCriteriaChange = (criteriaId: string, checked: boolean) => {
     if (checked) {
@@ -182,13 +187,17 @@ export function CompetitorResearchForm({
                 key={criteria.id}
                 className="flex items-start gap-3 rounded-lg border border-gray-200 p-3 cursor-pointer hover:bg-gray-50 transition-colors"
               >
-                <Checkbox
-                  checked={selectedCriteria.includes(criteria.id)}
-                  onCheckedChange={(checked) =>
-                    handleCriteriaChange(criteria.id, checked as boolean)
-                  }
-                  className="mt-0.5"
-                />
+                {mounted ? (
+                  <Checkbox
+                    checked={selectedCriteria.includes(criteria.id)}
+                    onCheckedChange={(checked) =>
+                      handleCriteriaChange(criteria.id, checked as boolean)
+                    }
+                    className="mt-0.5"
+                  />
+                ) : (
+                  <div className="h-4 w-4 shrink-0 rounded border border-gray-300 mt-0.5" />
+                )}
                 <div className="flex-1">
                   <div className="flex items-center gap-2">
                     <criteria.icon className="h-4 w-4 text-amber-500" />
