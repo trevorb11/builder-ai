@@ -43,6 +43,9 @@ export async function PUT(request: NextRequest) {
         zipCode: data.zipCode,
         brandVoice: data.brandVoice,
         logo: data.logo,
+        tagline: data.tagline,
+        buyerPersonas: data.buyerPersonas,
+        differentiators: data.differentiators,
       },
     });
 

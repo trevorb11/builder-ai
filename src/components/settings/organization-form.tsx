@@ -7,7 +7,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Loader2, Save, Building2, Globe, Phone, Mail, MapPin } from "lucide-react";
+import { Loader2, Save, Building2, Globe, Phone, Mail, MapPin, Sparkles, Users, Target, ArrowLeft } from "lucide-react";
+import Link from "next/link";
 
 interface Organization {
   id: string;
@@ -23,6 +24,9 @@ interface Organization {
   state: string | null;
   zipCode: string | null;
   brandVoice: string | null;
+  tagline: string | null;
+  buyerPersonas: string | null;
+  differentiators: string | null;
 }
 
 interface OrganizationSettingsFormProps {
@@ -44,6 +48,9 @@ export function OrganizationSettingsForm({ organization }: OrganizationSettingsF
     state: organization?.state || "",
     zipCode: organization?.zipCode || "",
     brandVoice: organization?.brandVoice || "",
+    tagline: organization?.tagline || "",
+    buyerPersonas: organization?.buyerPersonas || "",
+    differentiators: organization?.differentiators || "",
   });
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -76,6 +83,15 @@ export function OrganizationSettingsForm({ organization }: OrganizationSettingsF
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
+      {/* Back to Onboarding Link */}
+      <Link
+        href="/dashboard/onboarding"
+        className="inline-flex items-center gap-2 text-sm text-blue-600 hover:text-blue-800 transition-colors"
+      >
+        <ArrowLeft className="h-4 w-4" />
+        Back to Setup Checklist
+      </Link>
+
       <Card>
         <CardHeader>
           <div className="flex items-center gap-3">
@@ -124,6 +140,67 @@ export function OrganizationSettingsForm({ organization }: OrganizationSettingsF
               placeholder="A brief description of your home building company..."
               rows={3}
             />
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <div className="flex items-center gap-3">
+            <Sparkles className="h-5 w-5 text-purple-500" />
+            <div>
+              <CardTitle>Brand Identity</CardTitle>
+              <CardDescription>Define your brand positioning and target audience</CardDescription>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="tagline">Tagline / Slogan</Label>
+            <Input
+              id="tagline"
+              name="tagline"
+              value={formData.tagline}
+              onChange={handleChange}
+              placeholder="Building Dreams, Creating Homes"
+            />
+            <p className="text-sm text-gray-500">
+              Your company's tagline or slogan used in marketing materials
+            </p>
+          </div>
+          <div className="space-y-2">
+            <div className="flex items-center gap-2">
+              <Users className="h-4 w-4 text-gray-400" />
+              <Label htmlFor="buyerPersonas">Target Buyer Personas</Label>
+            </div>
+            <Textarea
+              id="buyerPersonas"
+              name="buyerPersonas"
+              value={formData.buyerPersonas}
+              onChange={handleChange}
+              placeholder="Describe your ideal home buyers. For example: 'First-time buyers ages 28-40, growing families looking for 3-4 bedrooms, empty nesters downsizing from larger homes, relocating professionals seeking turnkey solutions.'"
+              rows={4}
+            />
+            <p className="text-sm text-gray-500">
+              Who are your ideal home buyers? This helps AI tailor content to your target audience.
+            </p>
+          </div>
+          <div className="space-y-2">
+            <div className="flex items-center gap-2">
+              <Target className="h-4 w-4 text-gray-400" />
+              <Label htmlFor="differentiators">Key Differentiators</Label>
+            </div>
+            <Textarea
+              id="differentiators"
+              name="differentiators"
+              value={formData.differentiators}
+              onChange={handleChange}
+              placeholder="What makes you different from competitors? For example: 'Energy-efficient construction with 30% lower utility bills, 10-year structural warranty, in-house design team, 90-day guaranteed move-in dates, award-winning customer service.'"
+              rows={4}
+            />
+            <p className="text-sm text-gray-500">
+              What sets your company apart from competitors? The AI uses this to highlight your strengths.
+            </p>
           </div>
         </CardContent>
       </Card>
