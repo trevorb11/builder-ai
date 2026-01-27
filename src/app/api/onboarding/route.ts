@@ -48,13 +48,35 @@ async function detectProgress(organizationId: string) {
   ]);
 
   // Calculate auto-detected progress
+  const org = organization as {
+    name?: string;
+    email?: string;
+    phone?: string;
+    website?: string;
+    city?: string;
+    state?: string;
+    logo?: string;
+    brandVoice?: string;
+    tagline?: string;
+    buyerPersonas?: string;
+    differentiators?: string;
+    marketsServed?: string;
+    preferredLender?: string;
+    pricingContacts?: string;
+  } | null;
+
   const autoDetected = {
     // Company & Brand Basics
-    companyName: !!(organization?.name && organization.name.trim() !== ""),
-    contacts: !!(organization?.email || organization?.phone),
-    websiteUrl: !!(organization?.website && organization.website.trim() !== ""),
-    marketsServed: !!(organization?.city || organization?.state),
-    brandAssets: !!(organization?.logo || organization?.brandVoice),
+    companyName: !!(org?.name && org.name.trim() !== ""),
+    contacts: !!(org?.email || org?.phone),
+    websiteUrl: !!(org?.website && org.website.trim() !== ""),
+    tagline: !!(org?.tagline && org.tagline.trim() !== ""),
+    buyerPersonas: !!(org?.buyerPersonas && org.buyerPersonas.trim() !== ""),
+    differentiators: !!(org?.differentiators && org.differentiators.trim() !== ""),
+    marketsServed: !!(org?.marketsServed && org.marketsServed.trim() !== "") || !!(org?.city || org?.state),
+    preferredLender: !!(org?.preferredLender && org.preferredLender.trim() !== ""),
+    pricingContacts: !!(org?.pricingContacts && org.pricingContacts.trim() !== ""),
+    brandAssets: !!(org?.logo || org?.brandVoice),
 
     // Communities
     communitiesAdded: communities > 0,
@@ -113,7 +135,12 @@ export async function GET(request: NextRequest) {
       companyName: autoDetected.companyName,
       contacts: autoDetected.contacts,
       websiteUrl: autoDetected.websiteUrl,
+      tagline: autoDetected.tagline || storedProgress?.tagline || false,
+      buyerPersonas: autoDetected.buyerPersonas || storedProgress?.buyerPersonas || false,
+      differentiators: autoDetected.differentiators || storedProgress?.differentiators || false,
       marketsServed: autoDetected.marketsServed,
+      preferredLender: autoDetected.preferredLender || storedProgress?.preferredLender || false,
+      pricingContacts: autoDetected.pricingContacts || storedProgress?.pricingContacts || false,
       brandAssets: autoDetected.brandAssets || storedProgress?.brandAssets || false,
       communitiesAdded: autoDetected.communitiesAdded,
       floorplansAdded: autoDetected.floorplansAdded,
@@ -126,12 +153,7 @@ export async function GET(request: NextRequest) {
       socialHandles: autoDetected.socialHandles,
 
       // Manual-only fields (no auto-detection available)
-      tagline: storedProgress?.tagline || false,
-      buyerPersonas: storedProgress?.buyerPersonas || false,
-      differentiators: storedProgress?.differentiators || false,
       coopCommission: storedProgress?.coopCommission || false,
-      preferredLender: storedProgress?.preferredLender || false,
-      pricingContacts: storedProgress?.pricingContacts || false,
       leadFlowSetup: storedProgress?.leadFlowSetup || false,
       salesTeamAdded: storedProgress?.salesTeamAdded || false,
       websiteAccess: storedProgress?.websiteAccess || false,

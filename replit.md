@@ -8,6 +8,16 @@ Builder AI is a comprehensive SaaS platform designed specifically for new home b
 
 Preferred communication style: Simple, everyday language.
 
+## Recent Changes (January 2026)
+
+- Extended Organization model with new fields: tagline, buyerPersonas, differentiators, marketsServed, preferredLender, pricingContacts
+- Added Brand Identity section to Organization Settings form with fields for tagline, buyer personas, key differentiators, and geographic markets
+- Added Financing & Pricing section to Organization Settings form with fields for preferred lender and pricing contacts
+- Created reusable Breadcrumb component (`src/components/ui/breadcrumb.tsx`) for improved navigation
+- Updated onboarding API to auto-detect when new brand identity and financing fields are filled
+- Fixed security vulnerabilities: upgraded Next.js to 16.1.1, updated Hono dependencies
+- Resolved React hydration errors on competitor research page using mounted state pattern
+
 ## System Architecture
 
 ### Frontend Architecture

@@ -83,21 +83,27 @@ model VerificationToken {
 // ==========================================
 
 model Organization {
-  id          String   @id @default(cuid())
-  name        String
-  slug        String   @unique
-  description String?
-  logo        String?
-  website     String?
-  phone       String?
-  email       String?
-  address     String?
-  city        String?
-  state       String?
-  zipCode     String?
-  brandVoice  String?  // Brand voice guidelines for AI content generation
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id               String   @id @default(cuid())
+  name             String
+  slug             String   @unique
+  description      String?
+  logo             String?
+  website          String?
+  phone            String?
+  email            String?
+  address          String?
+  city             String?
+  state            String?
+  zipCode          String?
+  tagline          String?  // Company tagline/slogan
+  buyerPersonas    String?  // Target buyer personas description
+  differentiators  String?  // Key differentiators from competitors
+  marketsServed    String?  // Geographic markets/regions served
+  preferredLender  String?  // Preferred lender information
+  pricingContacts  String?  // Contacts for pricing updates
+  brandVoice       String?  // Brand voice guidelines for AI content generation
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
 
   users              User[]
   communities        Community[]
