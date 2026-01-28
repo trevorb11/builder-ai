@@ -7,16 +7,18 @@ import { CompetitorList } from "@/components/competitive/competitor-list";
 import { AddCompetitorForm } from "@/components/competitive/add-competitor-form";
 import { CompetitiveReports } from "@/components/competitive/competitive-reports";
 import { ComparisonTool } from "@/components/competitive/comparison-tool";
+import { BattleCardContainer } from "@/components/competitive/battle-card-container";
 import {
   Target,
   Building2,
   FileBarChart,
   GitCompare,
   Plus,
+  Swords,
 } from "lucide-react";
 
 async function getCompetitorData(organizationId: string) {
-  const [competitors, reports, myFloorplans] = await Promise.all([
+  const [competitors, reports, myFloorplans, organization] = await Promise.all([
     prisma.competitor.findMany({
       where: { organizationId },
       include: {
@@ -45,9 +47,17 @@ async function getCompetitorData(organizationId: string) {
         basePrice: true,
       },
     }),
+    prisma.organization.findUnique({
+      where: { id: organizationId },
+      select: {
+        name: true,
+        tagline: true,
+        differentiators: true,
+      },
+    }),
   ]);
 
-  return { competitors, reports, myFloorplans };
+  return { competitors, reports, myFloorplans, organization };
 }
 
 export default async function CompetitorsPage() {
@@ -68,7 +78,7 @@ export default async function CompetitorsPage() {
     );
   }
 
-  const { competitors, reports, myFloorplans } = await getCompetitorData(organizationId);
+  const { competitors, reports, myFloorplans, organization } = await getCompetitorData(organizationId);
 
   const totalCommunities = competitors.reduce(
     (acc, c) => acc + c.communities.length,
@@ -143,8 +153,12 @@ export default async function CompetitorsPage() {
       </div>
 
       {/* Main Content */}
-      <Tabs defaultValue="competitors" className="space-y-6">
+      <Tabs defaultValue="battle-cards" className="space-y-6">
         <TabsList>
+          <TabsTrigger value="battle-cards" className="gap-2">
+            <Swords className="h-4 w-4" />
+            Battle Cards
+          </TabsTrigger>
           <TabsTrigger value="competitors" className="gap-2">
             <Building2 className="h-4 w-4" />
             Competitors
@@ -162,6 +176,40 @@ export default async function CompetitorsPage() {
             Reports
           </TabsTrigger>
         </TabsList>
+
+        <TabsContent value="battle-cards">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Swords className="h-5 w-5 text-orange-500" />
+                Battle Card Comparison
+              </CardTitle>
+              <CardDescription>
+                Get a visual head-to-head comparison with actionable insights for your sales team.
+                Click &quot;View Full Deep Dive Analysis&quot; for comprehensive research.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {competitors.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-12 text-center">
+                  <Building2 className="h-12 w-12 text-gray-300" />
+                  <h3 className="mt-4 text-lg font-medium text-gray-900">
+                    No competitors tracked yet
+                  </h3>
+                  <p className="mt-2 text-sm text-gray-500">
+                    Add your first competitor to generate battle cards.
+                  </p>
+                </div>
+              ) : (
+                <BattleCardContainer
+                  competitors={competitors}
+                  organization={organization || { name: "Your Company", tagline: null, differentiators: null }}
+                  organizationId={organizationId}
+                />
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
 
         <TabsContent value="competitors">
           <Card>
