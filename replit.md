@@ -10,6 +10,12 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes (January 2026)
 
+- Added comprehensive competitor Battle Card feature with AI-powered head-to-head comparisons showing strengths, price/value/size advantages, winning points, and sales talking points
+- Created Deep Dive analysis feature with executive summary, market positioning, pricing analysis, product comparison, community analysis, sales strategy with objection handling, marketing recommendations, and prioritized action items
+- Added download functionality for full competitor analysis reports
+- Fixed critical IDOR security vulnerability by enforcing competitor ownership verification in battle-card API
+- Fixed runtime crash when organization has no floorplans by adding guards for empty arrays
+- Added user-facing error handling to battle card generation with clear error messages
 - Extended Organization model with new fields: tagline, buyerPersonas, differentiators, marketsServed, preferredLender, pricingContacts
 - Added Brand Identity section to Organization Settings form with fields for tagline, buyer personas, key differentiators, and geographic markets
 - Added Financing & Pricing section to Organization Settings form with fields for preferred lender and pricing contacts
