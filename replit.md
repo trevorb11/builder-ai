@@ -10,6 +10,15 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes (January 2026)
 
+- Added Knowledge Base feature for building AI knowledge across all tools
+  - New KnowledgeBaseEntry model in database for storing text, files, and website content
+  - Knowledge Base page at `/dashboard/knowledge-base` with manager component
+  - API endpoints for CRUD operations with organization-based isolation
+  - Text content entry with title, content, and category
+  - File uploads for .txt and .md files with automatic content extraction
+  - Website connections with automatic content fetching and extraction
+  - Toggle to enable/disable entries for AI context
+- Split "Online Presence" and "AI Readiness" into separate navigation items and pages
 - Added comprehensive competitor Battle Card feature with AI-powered head-to-head comparisons showing strengths, price/value/size advantages, winning points, and sales talking points
 - Created Deep Dive analysis feature with executive summary, market positioning, pricing analysis, product comparison, community analysis, sales strategy with objection handling, marketing recommendations, and prioritized action items
 - Added download functionality for full competitor analysis reports

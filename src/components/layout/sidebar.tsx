@@ -30,6 +30,7 @@ import {
   UserPlus,
   Package,
   Bot,
+  BookOpen,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -123,6 +124,14 @@ const navSections: NavSection[] = [
   {
     title: "AI Assistants",
     items: [
+      {
+        name: "Knowledge Base",
+        href: "/dashboard/knowledge-base",
+        icon: BookOpen,
+        description: "Train your AI",
+        badge: "NEW",
+        color: "text-emerald-500",
+      },
       {
         name: "Website Chatbot",
         href: "/dashboard/assistant",
