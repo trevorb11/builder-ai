@@ -1,5 +1,4 @@
 import OpenAI from "openai";
-import Anthropic from "@anthropic-ai/sdk";
 
 // Initialize OpenAI client using Replit AI Integrations
 // This uses Replit's AI Integrations service, which provides OpenAI-compatible API access
@@ -8,11 +7,6 @@ import Anthropic from "@anthropic-ai/sdk";
 export const openai = new OpenAI({
   baseURL: process.env.AI_INTEGRATIONS_OPENAI_BASE_URL,
   apiKey: process.env.AI_INTEGRATIONS_OPENAI_API_KEY,
-});
-
-// Initialize Anthropic (Claude) client for deep competitor research
-export const anthropic = new Anthropic({
-  apiKey: process.env.ANTHROPIC_API_KEY,
 });
 
 // ==========================================
@@ -1425,20 +1419,17 @@ Focus areas for this research: ${criteria.join(", ")}
 IMPORTANT: Be thorough, specific, and honest. Include real data points where available. If information is uncertain, note that explicitly rather than guessing.`;
 
   try {
-    const response = await anthropic.messages.create({
-      model: "claude-sonnet-4-20250514",
-      max_tokens: 8000,
-      system: systemPrompt,
-      messages: [{ role: "user", content: userPrompt }],
+    const response = await openai.chat.completions.create({
+      model: "gpt-4o",
+      max_completion_tokens: 8000,
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: userPrompt }
+      ],
     });
 
-    // Extract the text content from Claude's response
-    let fullText = "";
-    for (const block of response.content) {
-      if (block.type === "text") {
-        fullText += block.text;
-      }
-    }
+    // Extract the text content from OpenAI's response
+    const fullText = response.choices[0]?.message?.content || "";
 
     // Parse the battle card JSON from the response
     let battleCardSummary: BattleCardSummary;
