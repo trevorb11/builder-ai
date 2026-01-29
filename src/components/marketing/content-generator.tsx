@@ -126,8 +126,8 @@ export function MarketingContentGenerator({
   contentTypes,
 }: MarketingContentGeneratorProps) {
   const [contentType, setContentType] = useState("");
-  const [selectedCommunity, setSelectedCommunity] = useState("");
-  const [selectedFloorplan, setSelectedFloorplan] = useState("");
+  const [selectedCommunity, setSelectedCommunity] = useState("all");
+  const [selectedFloorplan, setSelectedFloorplan] = useState("all");
   const [additionalContext, setAdditionalContext] = useState("");
   const [platform, setPlatform] = useState("");
   const [tone, setTone] = useState("professional");
@@ -168,8 +168,8 @@ export function MarketingContentGenerator({
           organizationId,
           contentType,
           platform,
-          communityId: selectedCommunity,
-          floorplanId: selectedFloorplan,
+          communityId: selectedCommunity === "all" ? undefined : selectedCommunity,
+          floorplanId: selectedFloorplan === "all" ? undefined : selectedFloorplan,
           additionalContext,
           tone,
           variationCount,
@@ -350,7 +350,7 @@ export function MarketingContentGenerator({
               <SelectValue placeholder="Select community..." />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">All Communities</SelectItem>
+              <SelectItem value="all">All Communities</SelectItem>
               {communities.map((community) => (
                 <SelectItem key={community.id} value={community.id}>
                   {community.name}
@@ -367,7 +367,7 @@ export function MarketingContentGenerator({
               <SelectValue placeholder="Select floorplan..." />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">All Floorplans</SelectItem>
+              <SelectItem value="all">All Floorplans</SelectItem>
               {floorplans.map((plan) => (
                 <SelectItem key={plan.id} value={plan.id}>
                   {plan.name} ({plan.bedrooms}bd/{plan.bathrooms}ba)
