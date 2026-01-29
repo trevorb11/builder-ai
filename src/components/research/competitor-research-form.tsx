@@ -134,7 +134,7 @@ export function CompetitorResearchForm({
           Research a Competitor
         </CardTitle>
         <CardDescription>
-          Enter a competitor name and select research criteria
+          Powered by Claude Deep Research for forensic-level competitive intelligence
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -235,10 +235,10 @@ export function CompetitorResearchForm({
         {isResearching && (
           <div className="rounded-lg bg-amber-50 border border-amber-200 p-4 mt-4">
             <p className="text-sm text-amber-700">
-              <strong>Deep research in progress...</strong>
+              <strong>Claude Deep Research in progress...</strong>
             </p>
             <p className="text-xs text-amber-600 mt-1">
-              This may take 1-2 minutes as we gather comprehensive intelligence on this competitor.
+              Claude is conducting a full forensic deep dive. This may take 1-2 minutes for comprehensive results including battle card summary and full competitive report.
             </p>
           </div>
         )}

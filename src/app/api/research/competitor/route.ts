@@ -52,7 +52,7 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    // Perform the research with builder context for personalized comparison
+    // Perform the research using Claude deep research API
     try {
       const result = await researchCompetitor(
         organization.name,
@@ -61,7 +61,7 @@ export async function POST(req: NextRequest) {
         session.user.organizationId
       );
 
-      // Update the report with results
+      // Update the report with results including battle card summary and full report
       const updatedReport = await prisma.deepResearchReport.update({
         where: { id: report.id },
         data: {
@@ -70,6 +70,13 @@ export async function POST(req: NextRequest) {
           findings: JSON.stringify(result.findings),
           sources: JSON.stringify(result.sources),
           recommendations: JSON.stringify(result.recommendations),
+          rawResponse: result.fullReport,
+          metadata: JSON.stringify({
+            competitorName,
+            criteria: researchCriteria,
+            battleCardSummary: result.battleCardSummary,
+            researchEngine: "claude",
+          }),
           completedAt: new Date(),
         },
       });
