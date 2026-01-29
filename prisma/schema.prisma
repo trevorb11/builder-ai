@@ -125,6 +125,9 @@ model Organization {
   contentTopics          ContentTopic[]
   competitorMonitors     CompetitorMonitor[]
   
+  // Knowledge Base
+  knowledgeBaseEntries   KnowledgeBaseEntry[]
+  
   // Onboarding
   onboardingProgress     OnboardingProgress?
 
@@ -889,4 +892,32 @@ model MonitorReport {
 
   @@index([monitorId])
   @@index([checkedAt])
+}
+
+// ==========================================
+// KNOWLEDGE BASE
+// ==========================================
+
+model KnowledgeBaseEntry {
+  id             String   @id @default(cuid())
+  title          String
+  type           String   // "text", "file", "website"
+  content        String?  // Text content or extracted text from files/websites
+  sourceUrl      String?  // URL for website connections
+  fileName       String?  // Original filename for uploads
+  fileType       String?  // MIME type for uploaded files
+  fileSize       Int?     // File size in bytes
+  category       String?  // Optional category for organization
+  isProcessed    Boolean  @default(false) // Whether content has been extracted/processed
+  isActive       Boolean  @default(true)  // Whether to include in AI context
+  metadata       String?  // JSON - additional metadata
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  organizationId String
+
+  @@index([organizationId])
+  @@index([type])
+  @@index([isActive])
 }
