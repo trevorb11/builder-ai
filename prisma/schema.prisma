@@ -123,6 +123,7 @@ model Organization {
   digitalFootprintConfig DigitalFootprintConfig?
   contentStrategyConfig  ContentStrategyConfig?
   contentTopics          ContentTopic[]
+  competitorMonitors     CompetitorMonitor[]
   
   // Onboarding
   onboardingProgress     OnboardingProgress?
@@ -518,6 +519,7 @@ model Competitor {
 
   communities  CompetitorCommunity[]
   reports      CompetitiveReport[]
+  monitors     CompetitorMonitor[]
 
   @@unique([organizationId, name])
   @@index([organizationId])
@@ -841,9 +843,50 @@ model OnboardingProgress {
   completedAt       DateTime?
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
-  
+
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   organizationId String       @unique
-  
+
   @@index([organizationId])
+}
+
+// ==========================================
+// COMPETITOR MONITORING
+// ==========================================
+
+model CompetitorMonitor {
+  id             String    @id @default(cuid())
+  websiteUrl     String
+  intervalHours  Int       @default(24) // Check interval in hours (e.g., 24 = daily)
+  isActive       Boolean   @default(true)
+  lastCheckedAt  DateTime?
+  nextCheckAt    DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  competitor     Competitor   @relation(fields: [competitorId], references: [id], onDelete: Cascade)
+  competitorId   String
+
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  organizationId String
+
+  reports        MonitorReport[]
+
+  @@unique([competitorId, organizationId])
+  @@index([organizationId])
+  @@index([isActive, nextCheckAt])
+}
+
+model MonitorReport {
+  id          String   @id @default(cuid())
+  findings    String   // JSON - updates/changes found
+  summary     String   // Brief summary of what changed
+  hasUpdates  Boolean  @default(false)
+  checkedAt   DateTime @default(now())
+
+  monitor     CompetitorMonitor @relation(fields: [monitorId], references: [id], onDelete: Cascade)
+  monitorId   String
+
+  @@index([monitorId])
+  @@index([checkedAt])
 }

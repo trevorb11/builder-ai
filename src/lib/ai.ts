@@ -1,4 +1,5 @@
 import OpenAI from "openai";
+import Anthropic from "@anthropic-ai/sdk";
 
 // Initialize OpenAI client using Replit AI Integrations
 // This uses Replit's AI Integrations service, which provides OpenAI-compatible API access
@@ -7,6 +8,11 @@ import OpenAI from "openai";
 export const openai = new OpenAI({
   baseURL: process.env.AI_INTEGRATIONS_OPENAI_BASE_URL,
   apiKey: process.env.AI_INTEGRATIONS_OPENAI_API_KEY,
+});
+
+// Initialize Anthropic (Claude) client for deep competitor research
+export const anthropic = new Anthropic({
+  apiKey: process.env.ANTHROPIC_API_KEY,
 });
 
 // ==========================================
@@ -1252,13 +1258,9 @@ export async function researchCompetitor(
   competitorName: string,
   criteria: string[],
   organizationId: string
-): Promise<ResearchResult> {
-  // Get builder context for comparison
-  const builderContext = await buildBuilderContext(organizationId);
-  const prompt = SYSTEM_PROMPTS.competitorDeepResearch(builderName, competitorName, criteria, builderContext);
-  const query = `Conduct exhaustive competitive intelligence research on ${competitorName} as a direct competitor to ${builderName}. Include specific pricing, communities, reviews, marketing analysis, and strategic recommendations. Focus areas: ${criteria.join(", ")}`;
-
-  return performDeepResearch(query, prompt, { searchDepth: "deep", maxSearches: 10 });
+): Promise<ClaudeDeepResearchResult> {
+  // Use Claude API for deep forensic competitor research
+  return performClaudeDeepResearch(builderName, competitorName, criteria, organizationId);
 }
 
 export async function getContentStrategy(
@@ -1283,4 +1285,368 @@ export async function analyzeMarket(
   const query = `Conduct market research for the ${market} housing market for ${builderName}`;
 
   return performDeepResearch(query, prompt, { searchDepth: "deep" });
+}
+
+// ==========================================
+// CLAUDE DEEP RESEARCH (ANTHROPIC API)
+// ==========================================
+
+export interface ClaudeDeepResearchResult extends ResearchResult {
+  battleCardSummary: BattleCardSummary;
+  fullReport: string; // Complete markdown report from Claude
+}
+
+export interface BattleCardSummary {
+  competitorName: string;
+  builderName: string;
+  overallThreatLevel: "high" | "medium" | "low";
+  keyStrengths: { yours: string[]; theirs: string[] };
+  pricingComparison: string;
+  marketPositioning: string;
+  topOpportunities: string[];
+  topThreats: string[];
+  quickWins: string[];
+  talkingPoints: string[];
+}
+
+// Perform deep forensic competitor research using Claude API
+export async function performClaudeDeepResearch(
+  builderName: string,
+  competitorName: string,
+  criteria: string[],
+  organizationId: string
+): Promise<ClaudeDeepResearchResult> {
+  const builderContext = await buildBuilderContext(organizationId);
+
+  const systemPrompt = `You are an elite competitive intelligence analyst conducting a full forensic investigation on a home builder competitor. Your analysis must be EXHAUSTIVE and DETAILED - think of yourself as a private investigator digging into every aspect of this competitor's business.
+
+You have deep expertise in:
+- Residential real estate and home building industry
+- Competitive intelligence and market analysis
+- Digital marketing and brand analysis
+- Financial analysis and business strategy
+- Customer experience and reputation management
+
+YOUR MISSION: Conduct an extensive deep dive on ${competitorName} as a direct competitor to ${builderName}. Leave no stone unturned. Provide every piece of intelligence you can gather.
+
+${builderContext ? `
+=== YOUR CLIENT'S PROFILE (${builderName}) ===
+${builderContext}
+
+Use this information to provide DIRECT COMPARISONS throughout your analysis.
+` : ""}
+
+=== RESEARCH FOCUS AREAS ===
+${criteria.map((c, i) => `${i + 1}. ${c}`).join("\n")}`;
+
+  const userPrompt = `Conduct a FULL FORENSIC DEEP DIVE on ${competitorName}. I need two deliverables:
+
+## DELIVERABLE 1: BATTLE CARD SUMMARY (JSON)
+First, output a JSON block wrapped in \`\`\`json ... \`\`\` tags with this exact structure:
+{
+  "competitorName": "${competitorName}",
+  "builderName": "${builderName}",
+  "overallThreatLevel": "high|medium|low",
+  "keyStrengths": {
+    "yours": ["strength1", "strength2", "strength3", "strength4", "strength5"],
+    "theirs": ["strength1", "strength2", "strength3", "strength4", "strength5"]
+  },
+  "pricingComparison": "Brief pricing comparison summary",
+  "marketPositioning": "How they position vs you",
+  "topOpportunities": ["opp1", "opp2", "opp3"],
+  "topThreats": ["threat1", "threat2", "threat3"],
+  "quickWins": ["win1", "win2", "win3"],
+  "talkingPoints": ["point1", "point2", "point3", "point4", "point5"]
+}
+
+## DELIVERABLE 2: FULL COMPETITIVE INTELLIGENCE REPORT
+After the JSON block, provide the complete detailed report in markdown format. Be EXHAUSTIVE. Include:
+
+### COMPANY INTELLIGENCE
+- Ownership, founding year, key executives, leadership team
+- Estimated annual closings, revenue, employee count
+- Geographic footprint with SPECIFIC markets, cities, submarkets
+- Growth trajectory, recent expansions, acquisitions
+- Financial health indicators
+
+### PRODUCT PORTFOLIO DEEP DIVE
+- LIST every known active community with locations
+- Price ranges by community and product type
+- Floorplan analysis: entry-level, mid-range, premium offerings
+- Standard inclusions vs ${builderName}
+- Upgrade options and typical upgrade spend
+- Build times and move-in timelines
+- Current inventory/QMI availability
+
+### PRICING FORENSICS
+- Specific base price ranges by floorplan size
+- Price-per-square-foot analysis vs ${builderName}
+- Current incentives and promotions (be SPECIFIC):
+  - Rate buydowns, closing cost contributions, free upgrades
+- Historical pricing trends
+- How pricing compares in shared markets
+
+### MARKETING & DIGITAL PRESENCE
+- Brand positioning, messaging, taglines, value propositions
+- Website quality assessment
+- Social media audit (Facebook, Instagram, YouTube, TikTok, LinkedIn)
+  - Followers, posting frequency, engagement quality
+- Advertising approach and estimated spend
+- Content marketing and SEO strategy
+- Realtor marketing programs
+
+### CUSTOMER EXPERIENCE & REPUTATION
+- Google Reviews: rating, count, recent trends
+- Quote SPECIFIC reviews (positive and negative)
+- Common praise themes and complaint patterns
+- BBB rating, Zillow reviews, other sources
+- Sales process reputation
+- Construction quality feedback
+- Warranty service reputation
+
+### COMPETITIVE ADVANTAGES & VULNERABILITIES
+- Their strongest advantages over ${builderName} (be honest)
+- Key weaknesses ${builderName} can exploit
+- Market dominance areas vs struggle areas
+- Product gaps and underserved segments
+- Operational challenges
+
+### STRATEGIC BATTLE PLAN FOR ${builderName}
+- 10+ SPECIFIC actionable recommendations
+- Positioning strategies against this competitor
+- Pricing tactics to compete
+- Marketing messages that differentiate
+- Product improvements to consider
+- Customer experience enhancements
+- Markets to target or avoid
+
+Focus areas for this research: ${criteria.join(", ")}
+
+IMPORTANT: Be thorough, specific, and honest. Include real data points where available. If information is uncertain, note that explicitly rather than guessing.`;
+
+  try {
+    const response = await anthropic.messages.create({
+      model: "claude-sonnet-4-20250514",
+      max_tokens: 8000,
+      system: systemPrompt,
+      messages: [{ role: "user", content: userPrompt }],
+    });
+
+    // Extract the text content from Claude's response
+    let fullText = "";
+    for (const block of response.content) {
+      if (block.type === "text") {
+        fullText += block.text;
+      }
+    }
+
+    // Parse the battle card JSON from the response
+    let battleCardSummary: BattleCardSummary;
+    try {
+      const jsonMatch = fullText.match(/```json\s*([\s\S]*?)\s*```/);
+      if (jsonMatch) {
+        battleCardSummary = JSON.parse(jsonMatch[1]);
+      } else {
+        // Try to find JSON object directly
+        const jsonStart = fullText.indexOf("{");
+        const jsonEnd = fullText.indexOf("}", fullText.indexOf("talkingPoints")) + 1;
+        if (jsonStart !== -1 && jsonEnd > jsonStart) {
+          battleCardSummary = JSON.parse(fullText.substring(jsonStart, jsonEnd));
+        } else {
+          throw new Error("No JSON found");
+        }
+      }
+    } catch {
+      // Fallback battle card if parsing fails
+      battleCardSummary = {
+        competitorName,
+        builderName,
+        overallThreatLevel: "medium",
+        keyStrengths: {
+          yours: ["Refer to full report for details"],
+          theirs: ["Refer to full report for details"],
+        },
+        pricingComparison: "See full report for detailed pricing analysis",
+        marketPositioning: "See full report for positioning details",
+        topOpportunities: ["Review full report for opportunities"],
+        topThreats: ["Review full report for threats"],
+        quickWins: ["Review full report for quick wins"],
+        talkingPoints: ["Review full report for talking points"],
+      };
+    }
+
+    // Extract the full report (everything after the JSON block)
+    let fullReport = fullText;
+    const jsonBlockEnd = fullText.indexOf("```", fullText.indexOf("```json") + 7);
+    if (jsonBlockEnd !== -1) {
+      fullReport = fullText.substring(jsonBlockEnd + 3).trim();
+    }
+
+    // Parse into structured findings for backward compatibility
+    const structuredResponse = await parseResearchResponse(fullReport);
+
+    return {
+      summary: structuredResponse.summary,
+      findings: structuredResponse.findings,
+      sources: structuredResponse.sources,
+      recommendations: structuredResponse.recommendations,
+      generatedAt: new Date(),
+      battleCardSummary,
+      fullReport,
+    };
+  } catch (error) {
+    console.error("Claude deep research error:", error);
+    // Fallback to OpenAI if Claude fails
+    const builderContextStr = await buildBuilderContext(organizationId);
+    const prompt = SYSTEM_PROMPTS.competitorDeepResearch(builderName, competitorName, criteria, builderContextStr);
+    const query = `Conduct exhaustive competitive intelligence research on ${competitorName} as a direct competitor to ${builderName}. Focus areas: ${criteria.join(", ")}`;
+    const fallbackResult = await performDeepResearch(query, prompt, { searchDepth: "deep", maxSearches: 10 });
+
+    return {
+      ...fallbackResult,
+      battleCardSummary: {
+        competitorName,
+        builderName,
+        overallThreatLevel: "medium",
+        keyStrengths: {
+          yours: ["See full report"],
+          theirs: ["See full report"],
+        },
+        pricingComparison: fallbackResult.summary,
+        marketPositioning: "See full report",
+        topOpportunities: fallbackResult.recommendations?.slice(0, 3) || [],
+        topThreats: ["Review full report"],
+        quickWins: fallbackResult.recommendations?.slice(0, 3) || [],
+        talkingPoints: fallbackResult.recommendations?.slice(3, 8) || [],
+      },
+      fullReport: fallbackResult.summary + "\n\n" + fallbackResult.findings.map(f => `### ${f.title}\n${f.description}`).join("\n\n"),
+    };
+  }
+}
+
+// ==========================================
+// COMPETITOR WEB MONITORING (OpenAI Web Search)
+// ==========================================
+
+export interface MonitorCheckResult {
+  summary: string;
+  hasUpdates: boolean;
+  findings: MonitorFinding[];
+  checkedAt: Date;
+}
+
+export interface MonitorFinding {
+  category: string;
+  title: string;
+  description: string;
+  importance: "high" | "medium" | "low";
+  sourceUrl?: string;
+}
+
+// Check a competitor's website for updates using OpenAI web search
+export async function checkCompetitorWebsite(
+  competitorName: string,
+  websiteUrl: string,
+  builderName: string
+): Promise<MonitorCheckResult> {
+  const systemPrompt = `You are a competitive intelligence monitor for ${builderName}, a home builder. Your job is to search the web for the latest updates, news, and changes related to ${competitorName} (${websiteUrl}).
+
+Focus on finding:
+1. NEW community announcements or grand openings
+2. Price changes or new incentive offers
+3. New floorplan releases or product changes
+4. Marketing campaigns or promotional events
+5. News articles, press releases, or blog posts
+6. Leadership changes or company news
+7. New model home openings
+8. Construction updates or timeline changes
+9. Awards, recognition, or partnerships
+10. Website changes or new features
+
+For each finding, categorize it and assess its importance to ${builderName}.
+
+Respond with a JSON object:
+{
+  "summary": "Brief 2-3 sentence overview of what's new",
+  "hasUpdates": true/false,
+  "findings": [
+    {
+      "category": "pricing|product|marketing|news|community|operations",
+      "title": "Brief title",
+      "description": "Detailed description of the update",
+      "importance": "high|medium|low",
+      "sourceUrl": "URL if available"
+    }
+  ]
+}
+
+If nothing new is found, set hasUpdates to false and provide a summary indicating no significant changes detected.
+Respond only with valid JSON.`;
+
+  const query = `Search for the latest news, updates, and changes for ${competitorName} home builder. Check their website ${websiteUrl} and any recent news articles, press releases, social media posts, or announcements. What's new or changed recently?`;
+
+  try {
+    const response = await openai.responses.create({
+      model: "gpt-4o",
+      tools: [{ type: "web_search_preview" }],
+      tool_choice: "auto",
+      input: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: query },
+      ],
+    });
+
+    let outputText = "";
+    for (const item of response.output) {
+      if (item.type === "message" && item.content) {
+        for (const contentItem of item.content) {
+          if (contentItem.type === "output_text") {
+            outputText = contentItem.text;
+          }
+        }
+      }
+    }
+
+    // Parse the JSON response
+    try {
+      // Try to extract JSON from possible markdown code blocks
+      const jsonMatch = outputText.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
+      const jsonStr = jsonMatch ? jsonMatch[1] : outputText;
+      const parsed = JSON.parse(jsonStr);
+
+      return {
+        summary: parsed.summary || "No updates found",
+        hasUpdates: parsed.hasUpdates || false,
+        findings: (parsed.findings || []).map((f: MonitorFinding) => ({
+          category: f.category || "general",
+          title: f.title || "Update",
+          description: f.description || "",
+          importance: f.importance || "medium",
+          sourceUrl: f.sourceUrl,
+        })),
+        checkedAt: new Date(),
+      };
+    } catch {
+      // If JSON parsing fails, create a basic result from the text
+      return {
+        summary: outputText.slice(0, 500),
+        hasUpdates: outputText.toLowerCase().includes("new") || outputText.toLowerCase().includes("update"),
+        findings: [{
+          category: "general",
+          title: "Monitor Check Results",
+          description: outputText,
+          importance: "medium" as const,
+        }],
+        checkedAt: new Date(),
+      };
+    }
+  } catch (error) {
+    console.error("Competitor monitor check error:", error);
+    return {
+      summary: "Failed to check competitor website. Will retry on next scheduled check.",
+      hasUpdates: false,
+      findings: [],
+      checkedAt: new Date(),
+    };
+  }
 }

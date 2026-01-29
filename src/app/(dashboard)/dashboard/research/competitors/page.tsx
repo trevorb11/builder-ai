@@ -52,7 +52,7 @@ export default async function CompetitorResearchPage() {
                 </span>
               </div>
               <p className="mt-1 text-gray-500">
-                Deep-dive research on competitors based on your specific criteria
+                Forensic-level competitor research powered by Claude. Get battle card summaries and full competitive reports.
               </p>
             </div>
           </div>

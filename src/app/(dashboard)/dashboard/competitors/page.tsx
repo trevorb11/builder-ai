@@ -8,6 +8,7 @@ import { AddCompetitorForm } from "@/components/competitive/add-competitor-form"
 import { CompetitiveReports } from "@/components/competitive/competitive-reports";
 import { ComparisonTool } from "@/components/competitive/comparison-tool";
 import { BattleCardContainer } from "@/components/competitive/battle-card-container";
+import { CompetitorMonitoring } from "@/components/competitive/competitor-monitoring";
 import {
   Target,
   Building2,
@@ -15,10 +16,11 @@ import {
   GitCompare,
   Plus,
   Swords,
+  Radio,
 } from "lucide-react";
 
 async function getCompetitorData(organizationId: string) {
-  const [competitors, reports, myFloorplans, organization] = await Promise.all([
+  const [competitors, reports, myFloorplans, organization, monitors] = await Promise.all([
     prisma.competitor.findMany({
       where: { organizationId },
       include: {
@@ -55,9 +57,22 @@ async function getCompetitorData(organizationId: string) {
         differentiators: true,
       },
     }),
+    prisma.competitorMonitor.findMany({
+      where: { organizationId },
+      include: {
+        competitor: {
+          select: { id: true, name: true, website: true },
+        },
+        reports: {
+          orderBy: { checkedAt: "desc" },
+          take: 5,
+        },
+      },
+      orderBy: { createdAt: "desc" },
+    }),
   ]);
 
-  return { competitors, reports, myFloorplans, organization };
+  return { competitors, reports, myFloorplans, organization, monitors };
 }
 
 export default async function CompetitorsPage() {
@@ -78,7 +93,7 @@ export default async function CompetitorsPage() {
     );
   }
 
-  const { competitors, reports, myFloorplans, organization } = await getCompetitorData(organizationId);
+  const { competitors, reports, myFloorplans, organization, monitors } = await getCompetitorData(organizationId);
 
   const totalCommunities = competitors.reduce(
     (acc, c) => acc + c.communities.length,
@@ -89,6 +104,7 @@ export default async function CompetitorsPage() {
       acc + c.communities.reduce((a, cm) => a + cm.floorplans.length, 0),
     0
   );
+  const activeMonitors = monitors.filter((m) => m.isActive).length;
 
   return (
     <div className="p-8">
@@ -109,7 +125,7 @@ export default async function CompetitorsPage() {
       </div>
 
       {/* Stats */}
-      <div className="mb-8 grid gap-4 md:grid-cols-4">
+      <div className="mb-8 grid gap-4 md:grid-cols-5">
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-gray-500">
@@ -150,6 +166,16 @@ export default async function CompetitorsPage() {
             <div className="text-2xl font-bold">{reports.length}</div>
           </CardContent>
         </Card>
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-gray-500">
+              Active Monitors
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-green-600">{activeMonitors}</div>
+          </CardContent>
+        </Card>
       </div>
 
       {/* Main Content */}
@@ -162,6 +188,15 @@ export default async function CompetitorsPage() {
           <TabsTrigger value="competitors" className="gap-2">
             <Building2 className="h-4 w-4" />
             Competitors
+          </TabsTrigger>
+          <TabsTrigger value="monitoring" className="gap-2">
+            <Radio className="h-4 w-4" />
+            Monitoring
+            {activeMonitors > 0 && (
+              <Badge variant="secondary" className="ml-1 h-5 px-1.5 text-[10px]">
+                {activeMonitors}
+              </Badge>
+            )}
           </TabsTrigger>
           <TabsTrigger value="add" className="gap-2">
             <Plus className="h-4 w-4" />
@@ -216,11 +251,29 @@ export default async function CompetitorsPage() {
             <CardHeader>
               <CardTitle>Tracked Competitors</CardTitle>
               <CardDescription>
-                View and manage your competitor data
+                View and manage your competitor data. Click &quot;Monitor&quot; to set up automated website tracking.
               </CardDescription>
             </CardHeader>
             <CardContent>
               <CompetitorList competitors={competitors} />
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="monitoring">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Radio className="h-5 w-5 text-green-500" />
+                Competitor Monitoring
+              </CardTitle>
+              <CardDescription>
+                Automated website monitoring using AI web search. Set check frequencies per
+                competitor and get reports on new updates, pricing changes, and announcements.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <CompetitorMonitoring monitors={monitors} />
             </CardContent>
           </Card>
         </TabsContent>
