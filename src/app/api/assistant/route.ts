@@ -52,14 +52,14 @@ async function buildDataSnapshot(organizationId: string): Promise<string> {
           select: {
             floorplans: true,
             leads: true,
-            inventoryHomes: true,
+            inventory: true,
           },
         },
       },
     }),
     // Inventory homes
     prisma.inventoryHome.findMany({
-      where: { organizationId },
+      where: { community: { organizationId } },
       include: {
         community: { select: { name: true } },
         floorplan: { select: { name: true } },
@@ -142,7 +142,7 @@ ${hotLeads.length > 0
 
 🏘️ COMMUNITIES (${communities.length} total)
 ━━━━━━━━━━━━━━━━━━━━━━
-${communities.map((c) => `• ${c.name} (${c.city}, ${c.state}) - ${c._count.leads} leads, ${c._count.inventoryHomes} inventory homes, Status: ${c.status}`).join("\n")}
+${communities.map((c) => `• ${c.name} (${c.city}, ${c.state}) - ${c._count.leads} leads, ${c._count.inventory} inventory homes, Status: ${c.status}`).join("\n")}
 
 🏠 INVENTORY HOMES
 ━━━━━━━━━━━━━━━━━━━━━━
@@ -153,7 +153,7 @@ Total: ${inventoryHomes.length}
 
 ${availableHomes.length > 0 ? `
 Available Homes:
-${availableHomes.slice(0, 10).map((h) => `• ${h.address || h.lotNumber} - ${h.floorplan?.name || "Custom"} at ${h.community?.name} - $${h.price?.toLocaleString() || "TBD"} - ${h.status}`).join("\n")}
+${availableHomes.slice(0, 10).map((h) => `• ${h.address || h.lot} - ${h.floorplan?.name || "Custom"} at ${h.community?.name} - $${h.price?.toLocaleString() || "TBD"} - ${h.status}`).join("\n")}
 ` : "No available inventory homes currently."}
 
 📐 FLOORPLANS (${floorplans.length} total)
@@ -313,7 +313,7 @@ export async function GET(req: NextRequest) {
       }),
       prisma.inventoryHome.count({
         where: {
-          organizationId: session.user.organizationId,
+          community: { organizationId: session.user.organizationId },
           status: "available",
         },
       }),

@@ -967,7 +967,7 @@ export async function buildBuilderContext(organizationId: string): Promise<strin
       include: {
         floorplans: true,
         incentives: { where: { isActive: true } },
-        inventoryHomes: { where: { status: "available" } },
+        inventory: { where: { status: "available" } },
       },
     }),
     prisma.floorplan.findMany({
@@ -980,7 +980,10 @@ export async function buildBuilderContext(organizationId: string): Promise<strin
       },
     }),
     prisma.inventoryHome.findMany({
-      where: { organizationId, status: "available" },
+      where: { 
+        community: { organizationId },
+        status: "available" 
+      },
       include: {
         community: { select: { name: true } },
         floorplan: { select: { name: true, bedrooms: true, bathrooms: true, squareFeet: true } },
@@ -1040,7 +1043,7 @@ export async function buildBuilderContext(organizationId: string): Promise<strin
   } else {
     for (const community of communities) {
       context += `\n📍 ${community.name} (${community.status})\n`;
-      context += `   Location: ${community.address || ""} ${community.city}, ${community.state} ${community.zip || ""}\n`;
+      context += `   Location: ${community.address || ""} ${community.city}, ${community.state} ${community.zipCode || ""}\n`;
       if (community.startingPrice) {
         context += `   Starting From: $${community.startingPrice.toLocaleString()}\n`;
       }
@@ -1056,11 +1059,11 @@ export async function buildBuilderContext(organizationId: string): Promise<strin
           : JSON.stringify(community.amenities);
         context += `   Amenities: ${amenities}\n`;
       }
-      if (community.hoaFees) {
-        context += `   HOA Fees: $${community.hoaFees}/month\n`;
+      if (community.hoaFee) {
+        context += `   HOA Fees: $${community.hoaFee}/month\n`;
       }
       context += `   Floorplans Available: ${community.floorplans?.length || 0}\n`;
-      context += `   Quick Move-In Homes: ${community.inventoryHomes?.length || 0}\n`;
+      context += `   Quick Move-In Homes: ${community.inventory?.length || 0}\n`;
       if (community.incentives && community.incentives.length > 0) {
         context += `   Active Incentives: ${community.incentives.map(i => i.title).join(", ")}\n`;
       }
@@ -1099,7 +1102,7 @@ export async function buildBuilderContext(organizationId: string): Promise<strin
     context += "No available inventory homes.\n";
   } else {
     for (const home of inventoryHomes) {
-      context += `\n🏡 ${home.address || `Lot ${home.lotNumber}`} at ${home.community?.name}\n`;
+      context += `\n🏡 ${home.address || `Lot ${home.lot}`} at ${home.community?.name}\n`;
       context += `   Floorplan: ${home.floorplan?.name || "Custom"}\n`;
       if (home.floorplan) {
         context += `   Specs: ${home.floorplan.bedrooms} bed, ${home.floorplan.bathrooms} bath, ${home.floorplan.squareFeet?.toLocaleString() || "N/A"} sqft\n`;
@@ -1129,8 +1132,8 @@ export async function buildBuilderContext(organizationId: string): Promise<strin
       if (incentive.value) {
         context += `   Value: ${incentive.value}\n`;
       }
-      if (incentive.expiresAt) {
-        context += `   Expires: ${new Date(incentive.expiresAt).toLocaleDateString()}\n`;
+      if (incentive.endDate) {
+        context += `   Expires: ${new Date(incentive.endDate).toLocaleDateString()}\n`;
       }
     }
   }
@@ -1182,7 +1185,7 @@ export async function buildBuilderContext(organizationId: string): Promise<strin
   if (crmIntegrations.length > 0) {
     context += "\n=== CRM INTEGRATIONS ===\n";
     for (const crm of crmIntegrations) {
-      context += `Connected: ${crm.provider} (${crm.status})\n`;
+      context += `Connected: ${crm.provider} (${crm.syncStatus || "active"})\n`;
     }
   }
 
