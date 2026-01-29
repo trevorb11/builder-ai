@@ -29,6 +29,7 @@ import {
   Plus,
   UserPlus,
   Package,
+  Bot,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -152,12 +153,20 @@ const navSections: NavSection[] = [
     title: "Research & SEO",
     items: [
       {
-        name: "Your Online Presence",
+        name: "Online Presence",
         href: "/dashboard/research/footprint",
         icon: Globe,
-        description: "See how you appear online",
+        description: "Your digital footprint",
         badge: "AI",
         color: "text-teal-500",
+      },
+      {
+        name: "AI Readiness",
+        href: "/dashboard/research/ai-readiness",
+        icon: Bot,
+        description: "ChatGPT & AI visibility",
+        badge: "AI",
+        color: "text-purple-500",
       },
       {
         name: "Competitor Watch",
