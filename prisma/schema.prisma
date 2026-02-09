@@ -31,6 +31,7 @@ model User {
   accounts      Account[]
   sessions      Session[]
   conversations Conversation[]
+  notificationPrefs String?  // JSON for notification preferences
   salesSessions SalesTrainingSession[]
   contentDrafts MarketingContent[]
   researchReports DeepResearchReport[]

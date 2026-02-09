@@ -2,7 +2,7 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { DigitalFootprintAnalyzer } from "@/components/research/digital-footprint-analyzer";
 import { DigitalFootprintReports } from "@/components/research/digital-footprint-reports";
-import { Globe, Sparkles, Search, Facebook, Instagram } from "lucide-react";
+import { Globe, Sparkles, Search, Star, Bot, Target, Share2 } from "lucide-react";
 
 async function getFootprintData(organizationId: string) {
   const [config, reports, organization] = await Promise.all([
@@ -46,35 +46,43 @@ export default async function DigitalFootprintPage() {
             <div>
               <div className="flex items-center gap-2 flex-wrap">
                 <h1 className="text-2xl font-bold text-gray-900">
-                  Online Presence
+                  Digital Presence Deep Dive
                 </h1>
                 <span className="inline-flex items-center gap-1 rounded-full bg-gradient-to-r from-teal-500 to-cyan-500 px-2.5 py-1 text-xs font-semibold text-white">
                   <Sparkles className="h-3 w-3" />
-                  Deep Research
+                  Multi-Pass AI Research
                 </span>
               </div>
               <p className="mt-1 text-gray-500">
-                Analyze your website, social profiles, and digital footprint across the web
+                7-dimension deep analysis of your website, social media, reputation, SEO, AI visibility, and competitive positioning
               </p>
             </div>
           </div>
 
           <div className="mt-4 flex flex-wrap gap-4">
             <div className="flex items-center gap-2 text-sm text-gray-600">
-              <Globe className="h-4 w-4 text-teal-500" />
-              <span>Website Analysis</span>
+              <Globe className="h-4 w-4 text-blue-500" />
+              <span>Website & UX</span>
             </div>
             <div className="flex items-center gap-2 text-sm text-gray-600">
-              <Search className="h-4 w-4 text-cyan-500" />
-              <span>SEO & Schema</span>
-            </div>
-            <div className="flex items-center gap-2 text-sm text-gray-600">
-              <Facebook className="h-4 w-4 text-blue-500" />
-              <span>Social Profiles</span>
-            </div>
-            <div className="flex items-center gap-2 text-sm text-gray-600">
-              <Instagram className="h-4 w-4 text-pink-500" />
+              <Share2 className="h-4 w-4 text-pink-500" />
               <span>Social Media</span>
+            </div>
+            <div className="flex items-center gap-2 text-sm text-gray-600">
+              <Star className="h-4 w-4 text-amber-500" />
+              <span>Reputation</span>
+            </div>
+            <div className="flex items-center gap-2 text-sm text-gray-600">
+              <Search className="h-4 w-4 text-green-500" />
+              <span>SEO & Local</span>
+            </div>
+            <div className="flex items-center gap-2 text-sm text-gray-600">
+              <Bot className="h-4 w-4 text-purple-500" />
+              <span>AI Visibility</span>
+            </div>
+            <div className="flex items-center gap-2 text-sm text-gray-600">
+              <Target className="h-4 w-4 text-teal-500" />
+              <span>Competitive</span>
             </div>
           </div>
         </div>

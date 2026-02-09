@@ -2,31 +2,163 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 
-// Sync leads to CRM - this would contain actual CRM API integrations
+interface LeadData {
+  id: string;
+  email: string | null;
+  phone: string | null;
+  firstName: string | null;
+  lastName: string | null;
+  score: number | null;
+  source: string | null;
+  notes: string | null;
+}
+
+async function syncLeadToHubSpot(
+  apiKey: string,
+  lead: LeadData
+): Promise<{ success: boolean; externalId?: string; error?: string }> {
+  try {
+    const properties: Record<string, string> = {};
+    if (lead.email) properties.email = lead.email;
+    if (lead.firstName) properties.firstname = lead.firstName;
+    if (lead.lastName) properties.lastname = lead.lastName;
+    if (lead.phone) properties.phone = lead.phone;
+    if (lead.source) properties.hs_lead_status = lead.source;
+    if (lead.notes) properties.notes_last_contacted = lead.notes;
+    if (lead.score !== null) properties.hubspotscore = String(lead.score);
+
+    const response = await fetch("https://api.hubapi.com/crm/v3/objects/contacts", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ properties }),
+    });
+
+    if (!response.ok) {
+      // If contact already exists, try to update by email
+      if (response.status === 409 && lead.email) {
+        const updateResponse = await fetch(
+          `https://api.hubapi.com/crm/v3/objects/contacts/${lead.email}?idProperty=email`,
+          {
+            method: "PATCH",
+            headers: {
+              Authorization: `Bearer ${apiKey}`,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ properties }),
+          }
+        );
+
+        if (updateResponse.ok) {
+          const data = await updateResponse.json();
+          return { success: true, externalId: data.id };
+        }
+      }
+
+      const errorData = await response.json().catch(() => ({}));
+      return { success: false, error: errorData.message || `HubSpot API error (${response.status})` };
+    }
+
+    const data = await response.json();
+    return { success: true, externalId: data.id };
+  } catch (error) {
+    return { success: false, error: "Failed to connect to HubSpot API" };
+  }
+}
+
+async function syncLeadToSalesforce(
+  apiKey: string,
+  lead: LeadData,
+  instanceUrl?: string | null
+): Promise<{ success: boolean; externalId?: string; error?: string }> {
+  try {
+    const baseUrl = instanceUrl || "https://login.salesforce.com";
+
+    const leadPayload: Record<string, string | number> = {
+      LastName: lead.lastName || lead.email || "Unknown",
+    };
+    if (lead.firstName) leadPayload.FirstName = lead.firstName;
+    if (lead.email) leadPayload.Email = lead.email;
+    if (lead.phone) leadPayload.Phone = lead.phone;
+    if (lead.source) leadPayload.LeadSource = lead.source;
+    if (lead.notes) leadPayload.Description = lead.notes;
+
+    const response = await fetch(`${baseUrl}/services/data/v59.0/sobjects/Lead/`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(leadPayload),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ([]));
+      const errorMsg = Array.isArray(errorData) && errorData[0]?.message
+        ? errorData[0].message
+        : `Salesforce API error (${response.status})`;
+      return { success: false, error: errorMsg };
+    }
+
+    const data = await response.json();
+    return { success: true, externalId: data.id };
+  } catch (error) {
+    return { success: false, error: "Failed to connect to Salesforce API" };
+  }
+}
+
+async function syncLeadToGoHighLevel(
+  apiKey: string,
+  lead: LeadData
+): Promise<{ success: boolean; externalId?: string; error?: string }> {
+  try {
+    const contactPayload: Record<string, string | number | null> = {};
+    if (lead.email) contactPayload.email = lead.email;
+    if (lead.firstName) contactPayload.firstName = lead.firstName;
+    if (lead.lastName) contactPayload.lastName = lead.lastName;
+    if (lead.phone) contactPayload.phone = lead.phone;
+    if (lead.source) contactPayload.source = lead.source;
+    if (lead.notes) contactPayload.notes = lead.notes;
+
+    const response = await fetch("https://rest.gohighlevel.com/v1/contacts/", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(contactPayload),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      return { success: false, error: errorData.message || `GoHighLevel API error (${response.status})` };
+    }
+
+    const data = await response.json();
+    return { success: true, externalId: data.contact?.id || data.id };
+  } catch (error) {
+    return { success: false, error: "Failed to connect to GoHighLevel API" };
+  }
+}
+
 async function syncLeadToCRM(
   provider: string,
   apiKey: string,
-  lead: {
-    id: string;
-    email: string | null;
-    phone: string | null;
-    firstName: string | null;
-    lastName: string | null;
-    score: number | null;
-    source: string;
-    notes: string | null;
-  }
+  lead: LeadData,
+  instanceUrl?: string | null
 ): Promise<{ success: boolean; externalId?: string; error?: string }> {
-  // In production, this would make actual API calls to the CRM
-  // For now, simulate success with a mock external ID
-
-  // Simulate occasional failures for testing retry logic
-  if (Math.random() < 0.1) {
-    return { success: false, error: "CRM API temporarily unavailable" };
+  switch (provider) {
+    case "hubspot":
+      return syncLeadToHubSpot(apiKey, lead);
+    case "salesforce":
+      return syncLeadToSalesforce(apiKey, lead, instanceUrl);
+    case "gohighlevel":
+      return syncLeadToGoHighLevel(apiKey, lead);
+    default:
+      return { success: false, error: `Unsupported CRM provider: ${provider}` };
   }
-
-  const externalId = `${provider}_${Date.now()}_${lead.id.slice(0, 8)}`;
-  return { success: true, externalId };
 }
 
 export async function POST(
@@ -147,16 +279,21 @@ export async function POST(
 
       while (attempts < maxAttempts && (!syncResult || !syncResult.success)) {
         attempts++;
-        syncResult = await syncLeadToCRM(integration.provider, integration.apiKey!, {
-          id: lead.id,
-          email: lead.email,
-          phone: lead.phone,
-          firstName: lead.firstName,
-          lastName: lead.lastName,
-          score: lead.score,
-          source: lead.source,
-          notes: lead.notes,
-        });
+        syncResult = await syncLeadToCRM(
+          integration.provider,
+          integration.apiKey!,
+          {
+            id: lead.id,
+            email: lead.email,
+            phone: lead.phone,
+            firstName: lead.firstName,
+            lastName: lead.lastName,
+            score: lead.score,
+            source: lead.source,
+            notes: lead.notes,
+          },
+          integration.instanceUrl
+        );
 
         if (!syncResult.success && attempts < maxAttempts) {
           // Wait before retry (exponential backoff)
