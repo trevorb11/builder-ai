@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
-import { analyzeDigitalFootprint } from "@/lib/ai";
+import { analyzeDigitalFootprintDeep } from "@/lib/ai";
 
 export async function POST(req: NextRequest) {
   try {
@@ -10,7 +10,16 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { websiteUrl, socialProfiles } = await req.json();
+    const {
+      websiteUrl,
+      socialProfiles,
+      tiktokUrl,
+      pinterestUrl,
+      yelpUrl,
+      bbbUrl,
+      houzzUrl,
+      competitorUrls,
+    } = await req.json();
 
     if (!websiteUrl) {
       return NextResponse.json(
@@ -30,29 +39,97 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // Save/update the digital footprint config with all URLs
+    await prisma.digitalFootprintConfig.upsert({
+      where: { organizationId: session.user.organizationId },
+      update: {
+        websiteUrl,
+        facebookUrl: socialProfiles?.find((u: string) => u.includes("facebook")) || null,
+        instagramUrl: socialProfiles?.find((u: string) => u.includes("instagram")) || null,
+        linkedinUrl: socialProfiles?.find((u: string) => u.includes("linkedin")) || null,
+        youtubeUrl: socialProfiles?.find((u: string) => u.includes("youtube")) || null,
+        tiktokUrl: tiktokUrl || null,
+        pinterestUrl: pinterestUrl || null,
+        yelpUrl: yelpUrl || null,
+        bbbUrl: bbbUrl || null,
+        houzzUrl: houzzUrl || null,
+      },
+      create: {
+        organizationId: session.user.organizationId,
+        websiteUrl,
+        facebookUrl: socialProfiles?.find((u: string) => u.includes("facebook")) || null,
+        instagramUrl: socialProfiles?.find((u: string) => u.includes("instagram")) || null,
+        linkedinUrl: socialProfiles?.find((u: string) => u.includes("linkedin")) || null,
+        youtubeUrl: socialProfiles?.find((u: string) => u.includes("youtube")) || null,
+        tiktokUrl: tiktokUrl || null,
+        pinterestUrl: pinterestUrl || null,
+        yelpUrl: yelpUrl || null,
+        bbbUrl: bbbUrl || null,
+        houzzUrl: houzzUrl || null,
+      },
+    });
+
     // Create a pending report
     const report = await prisma.deepResearchReport.create({
       data: {
         type: "digital_footprint",
-        title: `Digital Footprint Analysis - ${new Date().toLocaleDateString()}`,
+        title: `Digital Presence Deep Dive - ${new Date().toLocaleDateString()}`,
         status: "in_progress",
-        metadata: JSON.stringify({ websiteUrl, socialProfiles }),
+        metadata: JSON.stringify({
+          websiteUrl,
+          socialProfiles,
+          tiktokUrl,
+          pinterestUrl,
+          yelpUrl,
+          bbbUrl,
+          houzzUrl,
+          competitorUrls,
+          analysisType: "multi_pass",
+        }),
         startedAt: new Date(),
         organizationId: session.user.organizationId,
         createdById: session.user.id,
       },
     });
 
-    // Perform the research asynchronously with builder context for personalized analysis
+    // Run multi-pass deep research with progress updates
     try {
-      const result = await analyzeDigitalFootprint(
+      const result = await analyzeDigitalFootprintDeep(
         organization.name,
         websiteUrl,
         session.user.organizationId,
-        socialProfiles
+        socialProfiles,
+        {
+          tiktokUrl,
+          pinterestUrl,
+          yelpUrl,
+          bbbUrl,
+          houzzUrl,
+          competitorUrls,
+        },
+        async (section, step, totalSteps) => {
+          // Update the report metadata with progress
+          await prisma.deepResearchReport.update({
+            where: { id: report.id },
+            data: {
+              metadata: JSON.stringify({
+                websiteUrl,
+                socialProfiles,
+                tiktokUrl,
+                pinterestUrl,
+                yelpUrl,
+                bbbUrl,
+                houzzUrl,
+                competitorUrls,
+                analysisType: "multi_pass",
+                progress: { section, step, totalSteps },
+              }),
+            },
+          });
+        }
       );
 
-      // Update the report with results
+      // Store section scores and overall score in metadata
       const updatedReport = await prisma.deepResearchReport.update({
         where: { id: report.id },
         data: {
@@ -61,13 +138,31 @@ export async function POST(req: NextRequest) {
           findings: JSON.stringify(result.findings),
           sources: JSON.stringify(result.sources),
           recommendations: JSON.stringify(result.recommendations),
+          rawResponse: JSON.stringify({
+            sectionScores: result.sectionScores,
+            overallScore: result.overallScore,
+            overallGrade: result.overallGrade,
+          }),
+          metadata: JSON.stringify({
+            websiteUrl,
+            socialProfiles,
+            tiktokUrl,
+            pinterestUrl,
+            yelpUrl,
+            bbbUrl,
+            houzzUrl,
+            competitorUrls,
+            analysisType: "multi_pass",
+            sectionScores: result.sectionScores,
+            overallScore: result.overallScore,
+            overallGrade: result.overallGrade,
+          }),
           completedAt: new Date(),
         },
       });
 
       return NextResponse.json(updatedReport);
     } catch (error) {
-      // Update report with error
       await prisma.deepResearchReport.update({
         where: { id: report.id },
         data: {
@@ -103,7 +198,6 @@ export async function GET(req: NextRequest) {
       take: 10,
     });
 
-    // Also get the config
     const config = await prisma.digitalFootprintConfig.findUnique({
       where: { organizationId: session.user.organizationId },
     });

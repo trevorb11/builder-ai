@@ -63,6 +63,16 @@ interface Source {
   relevance: number;
 }
 
+interface SectionScore {
+  section: string;
+  score: number;
+  maxScore: number;
+  grade: "A" | "B" | "C" | "D" | "F";
+  summary: string;
+  strengths: string[];
+  weaknesses: string[];
+}
+
 interface Report {
   id: string;
   title: string;
@@ -71,6 +81,8 @@ interface Report {
   findings?: string | null;
   sources?: string | null;
   recommendations?: string | null;
+  rawResponse?: string | null;
+  metadata?: string | null;
   createdAt: Date;
   completedAt?: Date | null;
 }
@@ -154,6 +166,29 @@ export function DigitalFootprintReports({ reports }: DigitalFootprintReportsProp
               // Categorize findings
               const categorizedFindings = categorizeFindings(findings);
 
+              // Extract section scores from metadata or rawResponse
+              let sectionScores: SectionScore[] = [];
+              let overallScore: number | null = null;
+              let overallGrade: string | null = null;
+              try {
+                const metadata = report.metadata ? JSON.parse(report.metadata) : null;
+                if (metadata?.sectionScores) {
+                  sectionScores = metadata.sectionScores;
+                  overallScore = metadata.overallScore;
+                  overallGrade = metadata.overallGrade;
+                } else if (report.rawResponse) {
+                  const raw = JSON.parse(report.rawResponse);
+                  if (raw.sectionScores) {
+                    sectionScores = raw.sectionScores;
+                    overallScore = raw.overallScore;
+                    overallGrade = raw.overallGrade;
+                  }
+                }
+              } catch {
+                // Older reports without section scores
+              }
+              const hasScorecard = sectionScores.length > 0;
+
               return (
                 <div
                   key={report.id}
@@ -193,9 +228,18 @@ export function DigitalFootprintReports({ reports }: DigitalFootprintReportsProp
                   {/* Report Content */}
                   {isExpanded && report.status === "completed" && (
                     <div className="border-t border-gray-200">
-                      <Tabs defaultValue="ai-readiness" className="w-full">
+                      <Tabs defaultValue={hasScorecard ? "scorecard" : "ai-readiness"} className="w-full">
                         <div className="border-b border-gray-200 px-4">
                           <TabsList className="h-12 w-full justify-start gap-2 bg-transparent p-0">
+                            {hasScorecard && (
+                              <TabsTrigger
+                                value="scorecard"
+                                className="flex items-center gap-2 data-[state=active]:border-b-2 data-[state=active]:border-indigo-500 data-[state=active]:text-indigo-600 rounded-none px-4"
+                              >
+                                <Target className="h-4 w-4" />
+                                Scorecard
+                              </TabsTrigger>
+                            )}
                             <TabsTrigger
                               value="ai-readiness"
                               className="flex items-center gap-2 data-[state=active]:border-b-2 data-[state=active]:border-purple-500 data-[state=active]:text-purple-600 rounded-none px-4"
@@ -226,6 +270,80 @@ export function DigitalFootprintReports({ reports }: DigitalFootprintReportsProp
                             </TabsTrigger>
                           </TabsList>
                         </div>
+
+                        {/* Scorecard Tab */}
+                        {hasScorecard && (
+                          <TabsContent value="scorecard" className="p-4 mt-0 space-y-6">
+                            {/* Overall Score */}
+                            <div className="flex items-center gap-6 rounded-xl bg-gradient-to-r from-indigo-50 to-purple-50 border border-indigo-200 p-6">
+                              <div className="relative flex-shrink-0">
+                                <svg className="w-28 h-28 -rotate-90" viewBox="0 0 120 120">
+                                  <circle
+                                    cx="60"
+                                    cy="60"
+                                    r="52"
+                                    fill="none"
+                                    stroke="#e5e7eb"
+                                    strokeWidth="10"
+                                  />
+                                  <circle
+                                    cx="60"
+                                    cy="60"
+                                    r="52"
+                                    fill="none"
+                                    stroke={
+                                      (overallScore || 0) >= 75 ? "#22c55e" :
+                                      (overallScore || 0) >= 60 ? "#eab308" :
+                                      (overallScore || 0) >= 40 ? "#f97316" : "#ef4444"
+                                    }
+                                    strokeWidth="10"
+                                    strokeDasharray={`${((overallScore || 0) / 100) * 327} 327`}
+                                    strokeLinecap="round"
+                                  />
+                                </svg>
+                                <div className="absolute inset-0 flex flex-col items-center justify-center">
+                                  <span className="text-3xl font-bold text-gray-900">{overallScore}</span>
+                                  <span className="text-xs text-gray-500">/100</span>
+                                </div>
+                              </div>
+                              <div className="flex-1">
+                                <div className="flex items-center gap-2 mb-1">
+                                  <h3 className="text-xl font-bold text-gray-900">Overall Digital Presence</h3>
+                                  <Badge className={
+                                    overallGrade === "A" ? "bg-green-100 text-green-700" :
+                                    overallGrade === "B" ? "bg-blue-100 text-blue-700" :
+                                    overallGrade === "C" ? "bg-yellow-100 text-yellow-700" :
+                                    overallGrade === "D" ? "bg-orange-100 text-orange-700" :
+                                    "bg-red-100 text-red-700"
+                                  }>
+                                    Grade: {overallGrade}
+                                  </Badge>
+                                </div>
+                                <p className="text-sm text-gray-600 leading-relaxed">
+                                  {report.summary}
+                                </p>
+                              </div>
+                            </div>
+
+                            {/* Section Score Cards */}
+                            <div>
+                              <h4 className="font-semibold text-gray-900 mb-4">Section Breakdown</h4>
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                {sectionScores.map((section) => {
+                                  const sectionConfig = getSectionConfig(section.section);
+                                  return (
+                                    <SectionScoreCard
+                                      key={section.section}
+                                      section={section}
+                                      icon={sectionConfig.icon}
+                                      color={sectionConfig.color}
+                                    />
+                                  );
+                                })}
+                              </div>
+                            </div>
+                          </TabsContent>
+                        )}
 
                         {/* AI Readiness Tab */}
                         <TabsContent value="ai-readiness" className="p-4 mt-0">
@@ -424,21 +542,26 @@ export function DigitalFootprintReports({ reports }: DigitalFootprintReportsProp
                           </div>
                         </div>
                         <h3 className="mt-4 font-semibold text-gray-900">
-                          Deep Analysis in Progress
+                          Multi-Pass Deep Analysis in Progress
                         </h3>
                         <p className="text-sm text-gray-500 mt-1 max-w-md">
-                          Our AI is conducting a comprehensive analysis of your website, social media, reviews, SEO performance, and AI search visibility...
+                          Running 7 focused AI research passes for a comprehensive analysis of your entire digital presence...
                         </p>
-                        <div className="mt-4 flex flex-wrap justify-center gap-2">
-                          <Badge variant="outline" className="animate-pulse">
-                            Analyzing website structure
-                          </Badge>
-                          <Badge variant="outline" className="animate-pulse delay-100">
-                            Checking AI visibility
-                          </Badge>
-                          <Badge variant="outline" className="animate-pulse delay-200">
-                            Reviewing SEO signals
-                          </Badge>
+                        <div className="mt-4 space-y-2 text-left w-full max-w-xs">
+                          {[
+                            "Website & UX Analysis",
+                            "Social Media Audit",
+                            "Reputation & Reviews",
+                            "SEO & Local Search",
+                            "AI Search Visibility",
+                            "Competitive Benchmarking",
+                            "Executive Report",
+                          ].map((step, idx) => (
+                            <div key={idx} className="flex items-center gap-2 text-sm text-gray-500">
+                              <div className="h-2 w-2 rounded-full bg-teal-400 animate-pulse" style={{ animationDelay: `${idx * 300}ms` }} />
+                              {step}
+                            </div>
+                          ))}
                         </div>
                       </div>
                     </div>
@@ -673,6 +796,102 @@ function ActionItem({
         {priority === "high" ? "!" : priority === "medium" ? "•" : "○"}
       </div>
       <p className="text-sm text-gray-700">{action}</p>
+    </div>
+  );
+}
+
+// Section score configuration for the scorecard
+const SECTION_CONFIG: Record<string, { icon: React.ReactNode; color: string }> = {
+  Website: { icon: <Globe className="h-5 w-5" />, color: "text-blue-500" },
+  "Social Media": { icon: <Share2 className="h-5 w-5" />, color: "text-pink-500" },
+  Reputation: { icon: <Star className="h-5 w-5" />, color: "text-amber-500" },
+  SEO: { icon: <Search className="h-5 w-5" />, color: "text-green-500" },
+  "AI Visibility": { icon: <Bot className="h-5 w-5" />, color: "text-purple-500" },
+  Competitive: { icon: <Target className="h-5 w-5" />, color: "text-teal-500" },
+};
+
+function getSectionConfig(section: string): { icon: React.ReactNode; color: string } {
+  return SECTION_CONFIG[section] || { icon: <BarChart3 className="h-5 w-5" />, color: "text-gray-500" };
+}
+
+function SectionScoreCard({
+  section,
+  icon,
+  color,
+}: {
+  section: SectionScore;
+  icon: React.ReactNode;
+  color: string;
+}) {
+  const gradeColors = {
+    A: "bg-green-100 text-green-700 border-green-200",
+    B: "bg-blue-100 text-blue-700 border-blue-200",
+    C: "bg-yellow-100 text-yellow-700 border-yellow-200",
+    D: "bg-orange-100 text-orange-700 border-orange-200",
+    F: "bg-red-100 text-red-700 border-red-200",
+  };
+
+  const barColor =
+    section.score >= 75 ? "bg-green-500" :
+    section.score >= 60 ? "bg-yellow-500" :
+    section.score >= 40 ? "bg-orange-500" : "bg-red-500";
+
+  return (
+    <div className="rounded-lg border border-gray-200 p-4 hover:shadow-sm transition-shadow">
+      <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center gap-2">
+          <span className={color}>{icon}</span>
+          <h5 className="font-semibold text-gray-900">{section.section}</h5>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="text-lg font-bold text-gray-900">{section.score}</span>
+          <span className="text-xs text-gray-400">/100</span>
+          <Badge className={`text-xs ${gradeColors[section.grade]}`}>
+            {section.grade}
+          </Badge>
+        </div>
+      </div>
+
+      {/* Progress bar */}
+      <div className="w-full bg-gray-100 rounded-full h-2 mb-3">
+        <div
+          className={`h-2 rounded-full transition-all ${barColor}`}
+          style={{ width: `${section.score}%` }}
+        />
+      </div>
+
+      {/* Summary */}
+      <p className="text-xs text-gray-600 mb-3">{section.summary}</p>
+
+      {/* Strengths & Weaknesses */}
+      <div className="grid grid-cols-2 gap-3">
+        {section.strengths.length > 0 && (
+          <div>
+            <p className="text-[10px] font-semibold text-green-600 uppercase tracking-wider mb-1">Strengths</p>
+            <ul className="space-y-0.5">
+              {section.strengths.slice(0, 3).map((s, i) => (
+                <li key={i} className="text-[11px] text-gray-600 flex items-start gap-1">
+                  <CheckCircle2 className="h-3 w-3 text-green-500 mt-0.5 flex-shrink-0" />
+                  <span className="line-clamp-2">{s}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+        {section.weaknesses.length > 0 && (
+          <div>
+            <p className="text-[10px] font-semibold text-red-600 uppercase tracking-wider mb-1">Needs Work</p>
+            <ul className="space-y-0.5">
+              {section.weaknesses.slice(0, 3).map((w, i) => (
+                <li key={i} className="text-[11px] text-gray-600 flex items-start gap-1">
+                  <XCircle className="h-3 w-3 text-red-400 mt-0.5 flex-shrink-0" />
+                  <span className="line-clamp-2">{w}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
