@@ -1,13 +1,65 @@
 import OpenAI from "openai";
+import { Agent, Runner, webSearchTool, withTrace } from "@openai/agents";
 
 // Initialize OpenAI client using Replit AI Integrations
-// This uses Replit's AI Integrations service, which provides OpenAI-compatible API access
-// without requiring your own API key. Charges are billed to your Replit credits.
-// The newest OpenAI model is "gpt-5" which was released August 7, 2025.
+// Used for fast/cheap parsing tasks (gpt-4o-mini) and non-research completions.
+// This uses Replit's AI Integrations proxy - no direct OpenAI key required.
 export const openai = new OpenAI({
   baseURL: process.env.AI_INTEGRATIONS_OPENAI_BASE_URL,
   apiKey: process.env.AI_INTEGRATIONS_OPENAI_API_KEY,
 });
+
+// ==========================================
+// OPENAI AGENTS SDK - REAL WEB SEARCH
+// ==========================================
+// Uses @openai/agents for research workflows with ACTUAL web search capability.
+// Requires OPENAI_API_KEY environment variable (direct OpenAI API key).
+// Falls back to standard chat completions (no web search) if agent execution fails.
+
+const webSearch = webSearchTool({ searchContextSize: "high" });
+const agentRunner = new Runner();
+
+/**
+ * Core helper: runs a research agent with real web search via OpenAI Agents SDK.
+ * Falls back to chat completion through Replit proxy if agent execution fails.
+ */
+async function runResearchAgent(
+  name: string,
+  instructions: string,
+  query: string,
+  options?: { maxTokens?: number; model?: string }
+): Promise<string> {
+  try {
+    const agent = new Agent({
+      name,
+      instructions,
+      model: options?.model || "gpt-4o",
+      tools: [webSearch],
+      modelSettings: {
+        ...(options?.maxTokens ? { maxTokens: options.maxTokens } : {}),
+      },
+    });
+
+    const result = await withTrace(`builder-ai:${name}`, async () => {
+      return await agentRunner.run(agent, query);
+    });
+
+    return result.finalOutput || "";
+  } catch (error) {
+    console.warn(`Agent web search failed for "${name}", falling back to chat completion:`, error);
+    // Fallback: use Replit proxy for standard completion (no web search)
+    const response = await openai.chat.completions.create({
+      model: options?.model || "gpt-4o",
+      messages: [
+        { role: "system", content: instructions },
+        { role: "user", content: query },
+      ],
+      temperature: 0.7,
+      max_completion_tokens: options?.maxTokens || 4000,
+    });
+    return response.choices[0]?.message?.content || "";
+  }
+}
 
 // ==========================================
 // DEEP RESEARCH API CONFIGURATION
@@ -69,68 +121,31 @@ export interface ResearchSource {
   relevance: number;
 }
 
-// Deep Research using OpenAI Responses API with web search
-// Uses Replit AI Integrations which supports the responses API with web_search_preview tool
+// Deep Research using OpenAI Agents SDK with real web search
 export async function performDeepResearch(
   query: string,
   systemPrompt: string,
   config: DeepResearchConfig = {}
 ): Promise<ResearchResult> {
-  const { maxSearches = 5, searchDepth = "standard" } = config;
-
   try {
-    // Use the responses API with web search tool for deep research capability
-    // The web_search_preview tool enables real-time web search for up-to-date information
-    // Input must be structured as array of {role, content} messages for multi-turn conversations
-    const response = await openai.responses.create({
-      model: "gpt-4o", // gpt-4o is supported by Replit AI Integrations for responses API
-      tools: [{ type: "web_search_preview" }],
-      tool_choice: "auto",
-      input: [
-        { role: "system", content: systemPrompt },
-        { role: "user", content: query }
-      ],
-    });
+    const outputText = await runResearchAgent(
+      "Deep Research",
+      systemPrompt,
+      query,
+      { maxTokens: 4000 }
+    );
 
-    // Extract the output text from the response
-    let outputText = "";
-    const sources: ResearchSource[] = [];
-
-    for (const item of response.output) {
-      if (item.type === "message" && item.content) {
-        for (const contentItem of item.content) {
-          if (contentItem.type === "output_text") {
-            outputText = contentItem.text;
-            // Extract annotations/citations if available
-            if (contentItem.annotations) {
-              for (const annotation of contentItem.annotations) {
-                if (annotation.type === "url_citation") {
-                  sources.push({
-                    url: annotation.url,
-                    title: annotation.title || annotation.url,
-                    relevance: 0.8,
-                  });
-                }
-              }
-            }
-          }
-        }
-      }
-    }
-
-    // Parse the response into structured findings
     const structuredResponse = await parseResearchResponse(outputText);
 
     return {
       summary: structuredResponse.summary,
       findings: structuredResponse.findings,
-      sources: sources.length > 0 ? sources : structuredResponse.sources,
+      sources: structuredResponse.sources,
       recommendations: structuredResponse.recommendations,
       generatedAt: new Date(),
     };
   } catch (error) {
     console.error("Deep research error:", error);
-    // Fallback to standard completion if responses API fails
     return await performFallbackResearch(query, systemPrompt);
   }
 }
@@ -1261,7 +1276,7 @@ function scoreToGrade(score: number): "A" | "B" | "C" | "D" | "F" {
   return "F";
 }
 
-// Individual research pass for a focused section
+// Individual research pass for a focused section using OpenAI Agents SDK
 async function performSectionResearch(
   sectionName: string,
   systemPrompt: string,
@@ -1273,39 +1288,13 @@ async function performSectionResearch(
   sectionScore: SectionScore;
 }> {
   try {
-    const response = await openai.responses.create({
-      model: "gpt-4o",
-      tools: [{ type: "web_search_preview" }],
-      tool_choice: "auto",
-      input: [
-        { role: "system", content: systemPrompt },
-        { role: "user", content: query },
-      ],
-    });
-
-    let outputText = "";
-    const sources: ResearchSource[] = [];
-
-    for (const item of response.output) {
-      if (item.type === "message" && item.content) {
-        for (const contentItem of item.content) {
-          if (contentItem.type === "output_text") {
-            outputText = contentItem.text;
-            if (contentItem.annotations) {
-              for (const annotation of contentItem.annotations) {
-                if (annotation.type === "url_citation") {
-                  sources.push({
-                    url: annotation.url,
-                    title: annotation.title || annotation.url,
-                    relevance: 0.8,
-                  });
-                }
-              }
-            }
-          }
-        }
-      }
-    }
+    // Use agent with real web search for this research section
+    const outputText = await runResearchAgent(
+      `${sectionName} Analyst`,
+      systemPrompt,
+      query,
+      { maxTokens: 4000 }
+    );
 
     const parsePrompt = `Parse this research analysis into structured JSON. The section is "${sectionName}".
 
@@ -1327,10 +1316,11 @@ Return ONLY valid JSON with this exact structure:
       "metrics": [{"name": "<metric>", "value": "<value>", "benchmark": "<industry avg>", "trend": "up|down|stable", "interpretation": "<what this means>"}]
     }
   ],
-  "recommendations": ["<specific actionable recommendation 1>", "<recommendation 2>"]
+  "recommendations": ["<specific actionable recommendation 1>", "<recommendation 2>"],
+  "sources": [{"url": "<URL found in research>", "title": "<page title>", "relevance": 0.8}]
 }
 
-IMPORTANT: Include at LEAST 5 detailed findings with data points and metrics. Be very specific with data - include actual numbers, URLs, dates, and concrete observations.
+IMPORTANT: Include at LEAST 5 detailed findings with data points and metrics. Be very specific with data - include actual numbers, URLs, dates, and concrete observations. Extract all URLs/sources mentioned in the research text.
 
 Research text:
 ${outputText}`;
@@ -1351,7 +1341,11 @@ ${outputText}`;
         ...f,
         category: f.category || sectionName.toLowerCase(),
       })),
-      sources: sources.length > 0 ? sources : [],
+      sources: (parsed.sources || []).map((s: ResearchSource) => ({
+        url: s.url || "",
+        title: s.title || s.url || "",
+        relevance: s.relevance || 0.7,
+      })),
       recommendations: parsed.recommendations || [],
       sectionScore: {
         section: sectionName,
@@ -1760,7 +1754,7 @@ export interface BattleCardSummary {
   talkingPoints: string[];
 }
 
-// Perform deep forensic competitor research using Claude API
+// Perform deep forensic competitor research using OpenAI Agents SDK with web search
 export async function performClaudeDeepResearch(
   builderName: string,
   competitorName: string,
@@ -1876,17 +1870,13 @@ Focus areas for this research: ${criteria.join(", ")}
 IMPORTANT: Be thorough, specific, and honest. Include real data points where available. If information is uncertain, note that explicitly rather than guessing.`;
 
   try {
-    const response = await openai.chat.completions.create({
-      model: "gpt-4o",
-      max_completion_tokens: 8000,
-      messages: [
-        { role: "system", content: systemPrompt },
-        { role: "user", content: userPrompt }
-      ],
-    });
-
-    // Extract the text content from OpenAI's response
-    const fullText = response.choices[0]?.message?.content || "";
+    // Use agent with real web search for competitor research
+    const fullText = await runResearchAgent(
+      `${competitorName} Competitor Intel`,
+      systemPrompt,
+      userPrompt,
+      { maxTokens: 8000 }
+    );
 
     // Parse the battle card JSON from the response
     let battleCardSummary: BattleCardSummary;
@@ -1991,7 +1981,7 @@ export interface MonitorFinding {
   sourceUrl?: string;
 }
 
-// Check a competitor's website for updates using OpenAI web search
+// Check a competitor's website for updates using OpenAI Agents SDK web search
 export async function checkCompetitorWebsite(
   competitorName: string,
   websiteUrl: string,
@@ -2034,30 +2024,16 @@ Respond only with valid JSON.`;
   const query = `Search for the latest news, updates, and changes for ${competitorName} home builder. Check their website ${websiteUrl} and any recent news articles, press releases, social media posts, or announcements. What's new or changed recently?`;
 
   try {
-    const response = await openai.responses.create({
-      model: "gpt-4o",
-      tools: [{ type: "web_search_preview" }],
-      tool_choice: "auto",
-      input: [
-        { role: "system", content: systemPrompt },
-        { role: "user", content: query },
-      ],
-    });
-
-    let outputText = "";
-    for (const item of response.output) {
-      if (item.type === "message" && item.content) {
-        for (const contentItem of item.content) {
-          if (contentItem.type === "output_text") {
-            outputText = contentItem.text;
-          }
-        }
-      }
-    }
+    // Use agent with real web search for competitor monitoring
+    const outputText = await runResearchAgent(
+      `${competitorName} Monitor`,
+      systemPrompt,
+      query,
+      { maxTokens: 2000 }
+    );
 
     // Parse the JSON response
     try {
-      // Try to extract JSON from possible markdown code blocks
       const jsonMatch = outputText.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
       const jsonStr = jsonMatch ? jsonMatch[1] : outputText;
       const parsed = JSON.parse(jsonStr);
@@ -2075,7 +2051,6 @@ Respond only with valid JSON.`;
         checkedAt: new Date(),
       };
     } catch {
-      // If JSON parsing fails, create a basic result from the text
       return {
         summary: outputText.slice(0, 500),
         hasUpdates: outputText.toLowerCase().includes("new") || outputText.toLowerCase().includes("update"),
