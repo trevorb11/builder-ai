@@ -86,42 +86,6 @@ const navSections: NavSection[] = [
     ],
   },
   {
-    title: "Your Business",
-    items: [
-      {
-        name: "Communities",
-        href: "/dashboard/communities",
-        icon: Building2,
-        description: "Manage neighborhoods",
-      },
-      {
-        name: "Floorplans",
-        href: "/dashboard/floorplans",
-        icon: Home,
-        description: "Home designs",
-      },
-      {
-        name: "Inventory",
-        href: "/dashboard/inventory",
-        icon: Package,
-        description: "Quick move-in homes",
-        color: "text-orange-500",
-      },
-      {
-        name: "Leads",
-        href: "/dashboard/leads",
-        icon: Users,
-        description: "Potential buyers",
-      },
-      {
-        name: "Analytics",
-        href: "/dashboard/analytics",
-        icon: BarChart3,
-        description: "Performance insights",
-      },
-    ],
-  },
-  {
     title: "AI Assistants",
     items: [
       {
