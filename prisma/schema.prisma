@@ -129,9 +129,6 @@ model Organization {
   // Knowledge Base
   knowledgeBaseEntries   KnowledgeBaseEntry[]
   
-  // Alerts
-  alerts                 Alert[]
-  
   // Onboarding
   onboardingProgress     OnboardingProgress?
 
@@ -924,35 +921,4 @@ model KnowledgeBaseEntry {
   @@index([organizationId])
   @@index([type])
   @@index([isActive])
-}
-
-// ==========================================
-// ALERTS
-// ==========================================
-
-model Alert {
-  id             String   @id @default(cuid())
-  title          String
-  message        String
-  type           String   @default("info") // info, warning, critical, success
-  source         String   @default("manual") // manual, competitor_monitor, seo_scan, ai_readiness, lead_activity
-  sourceId       String?  // ID of the source record (e.g., monitorReportId, competitorId)
-  category       String?  // Optional grouping category
-  status         String   @default("unread") // unread, read, dismissed, resolved
-  priority       String   @default("medium") // low, medium, high, urgent
-  actionUrl      String?  // Optional link to relevant page
-  metadata       String?  // JSON - additional context data
-  readAt         DateTime?
-  resolvedAt     DateTime?
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
-
-  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  organizationId String
-
-  @@index([organizationId])
-  @@index([status])
-  @@index([source])
-  @@index([createdAt])
-  @@index([organizationId, status])
 }
