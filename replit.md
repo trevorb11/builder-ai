@@ -76,13 +76,12 @@ Preferred communication style: Simple, everyday language.
 - Protected routes using auth middleware in dashboard layout
 
 **AI Integration**
-- OpenAI GPT-4o as primary LLM provider via Replit AI Integrations
-- Uses `AI_INTEGRATIONS_OPENAI_BASE_URL` and `AI_INTEGRATIONS_OPENAI_API_KEY` environment variables (automatically configured)
-- No personal OpenAI API key required - charges billed to Replit credits
-- Vercel AI SDK for streaming responses and chat interfaces
+- OpenAI GPT-4o as primary LLM provider via direct API key (`OPENAI_API_KEY` secret)
+- OpenAI Agents SDK (`@openai/agents`) for research workflows with real web search capability
+- Centralized OpenAI client in `src/lib/ai.ts` used across all API routes
 - Custom system prompts for different AI agents (website assistant, marketing, sales training)
 - Context building from structured data (floorplans, communities, incentives)
-- Deep research using OpenAI Responses API with `web_search_preview` tool for real-time web search capabilities
+- Agent-based deep research with web search tool for real-time competitive intelligence
 - All API calls use `max_completion_tokens` parameter for token control
 
 ### Data Storage

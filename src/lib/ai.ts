@@ -1,28 +1,34 @@
+import "server-only";
 import OpenAI from "openai";
-import { Agent, Runner, webSearchTool, withTrace } from "@openai/agents";
 
-// Initialize OpenAI client using Replit AI Integrations
-// Used for fast/cheap parsing tasks (gpt-4o-mini) and non-research completions.
-// This uses Replit's AI Integrations proxy - no direct OpenAI key required.
+if (!process.env.OPENAI_API_KEY) {
+  console.warn("WARNING: OPENAI_API_KEY is not set. AI features will not work.");
+}
+
 export const openai = new OpenAI({
-  baseURL: process.env.AI_INTEGRATIONS_OPENAI_BASE_URL,
-  apiKey: process.env.AI_INTEGRATIONS_OPENAI_API_KEY,
+  apiKey: process.env.OPENAI_API_KEY,
 });
 
-// ==========================================
-// OPENAI AGENTS SDK - REAL WEB SEARCH
-// ==========================================
-// Uses @openai/agents for research workflows with ACTUAL web search capability.
-// Requires OPENAI_API_KEY environment variable (direct OpenAI API key).
-// Falls back to standard chat completions (no web search) if agent execution fails.
+let agentModules: {
+  Agent: typeof import("@openai/agents").Agent;
+  Runner: typeof import("@openai/agents").Runner;
+  webSearchTool: typeof import("@openai/agents").webSearchTool;
+  withTrace: typeof import("@openai/agents").withTrace;
+} | null = null;
 
-const webSearch = webSearchTool({ searchContextSize: "high" });
-const agentRunner = new Runner();
+async function getAgentModules() {
+  if (!agentModules) {
+    const mod = await import("@openai/agents");
+    agentModules = {
+      Agent: mod.Agent,
+      Runner: mod.Runner,
+      webSearchTool: mod.webSearchTool,
+      withTrace: mod.withTrace,
+    };
+  }
+  return agentModules;
+}
 
-/**
- * Core helper: runs a research agent with real web search via OpenAI Agents SDK.
- * Falls back to chat completion through Replit proxy if agent execution fails.
- */
 async function runResearchAgent(
   name: string,
   instructions: string,
@@ -30,6 +36,10 @@ async function runResearchAgent(
   options?: { maxTokens?: number; model?: string }
 ): Promise<string> {
   try {
+    const { Agent, Runner, webSearchTool, withTrace } = await getAgentModules();
+    const webSearch = webSearchTool({ searchContextSize: "high" });
+    const agentRunner = new Runner();
+
     const agent = new Agent({
       name,
       instructions,
@@ -47,7 +57,6 @@ async function runResearchAgent(
     return result.finalOutput || "";
   } catch (error) {
     console.warn(`Agent web search failed for "${name}", falling back to chat completion:`, error);
-    // Fallback: use Replit proxy for standard completion (no web search)
     const response = await openai.chat.completions.create({
       model: options?.model || "gpt-4o",
       messages: [
@@ -156,7 +165,7 @@ async function performFallbackResearch(
   systemPrompt: string
 ): Promise<ResearchResult> {
   const response = await openai.chat.completions.create({
-    model: "gpt-4o", // gpt-4o is supported by Replit AI Integrations
+    model: "gpt-4o",
     messages: [
       { role: "system", content: systemPrompt },
       { role: "user", content: query }
@@ -184,9 +193,8 @@ ${text}
 Respond only with valid JSON.`;
 
   try {
-    // Use Replit AI Integrations for parsing research into structured format
     const parseResponse = await openai.chat.completions.create({
-      model: "gpt-4o-mini", // gpt-4o-mini is supported by Replit AI Integrations
+      model: "gpt-4o-mini",
       messages: [{ role: "user", content: structurePrompt }],
       temperature: 0.3,
       max_completion_tokens: 2000,
@@ -1207,7 +1215,7 @@ export async function buildBuilderContext(organizationId: string): Promise<strin
   return context;
 }
 
-// Chat completion helper - uses Replit AI Integrations
+// Chat completion helper
 export async function getChatCompletion(
   messages: { role: "system" | "user" | "assistant"; content: string }[],
   options?: {
@@ -1217,7 +1225,7 @@ export async function getChatCompletion(
   }
 ) {
   const response = await openai.chat.completions.create({
-    model: options?.model || "gpt-4o", // gpt-4o is supported by Replit AI Integrations
+    model: options?.model || "gpt-4o", 
     messages,
     temperature: options?.temperature ?? 0.7,
     max_completion_tokens: options?.maxTokens ?? 1000,
@@ -1226,7 +1234,7 @@ export async function getChatCompletion(
   return response.choices[0]?.message?.content || "";
 }
 
-// Streaming chat completion helper - uses Replit AI Integrations
+// Streaming chat completion helper
 export async function streamChatCompletion(
   messages: { role: "system" | "user" | "assistant"; content: string }[],
   options?: {
@@ -1236,7 +1244,7 @@ export async function streamChatCompletion(
   }
 ) {
   return openai.chat.completions.create({
-    model: options?.model || "gpt-4o", // gpt-4o is supported by Replit AI Integrations
+    model: options?.model || "gpt-4o", 
     messages,
     temperature: options?.temperature ?? 0.7,
     max_completion_tokens: options?.maxTokens ?? 1000,

@@ -1,10 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
-import { SYSTEM_PROMPTS, buildBuilderContext } from "@/lib/ai";
-import OpenAI from "openai";
-
-const openai = new OpenAI();
+import { openai, SYSTEM_PROMPTS, buildBuilderContext } from "@/lib/ai";
 
 interface Message {
   role: "user" | "assistant" | "system";

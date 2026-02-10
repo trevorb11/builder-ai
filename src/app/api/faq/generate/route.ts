@@ -69,9 +69,9 @@ Important guidelines:
 
 Return ONLY the JSON array, no additional text.`;
 
-    // Use Replit AI Integrations for FAQ generation
+    
     const completion = await openai.chat.completions.create({
-      model: "gpt-4o", // gpt-4o is supported by Replit AI Integrations
+      model: "gpt-4o", 
       messages: [
         { role: "system", content: systemPrompt },
         { role: "user", content: userPrompt },

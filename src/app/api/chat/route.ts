@@ -44,9 +44,9 @@ export async function POST(request: NextRequest) {
       })),
     ];
 
-    // Get completion from OpenAI using Replit AI Integrations
+    
     const completion = await openai.chat.completions.create({
-      model: "gpt-4o", // gpt-4o is supported by Replit AI Integrations
+      model: "gpt-4o", 
       messages: openaiMessages,
       temperature: 0.7,
       max_completion_tokens: 1000,
