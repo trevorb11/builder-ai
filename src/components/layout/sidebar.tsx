@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import {
@@ -206,13 +207,7 @@ export function Sidebar({ user }: SidebarProps) {
     <>
       {/* Logo */}
       <div className="flex h-16 items-center gap-3 border-b border-gray-200 px-6">
-        <div className="flex h-10 w-10 items-center justify-center rounded-xl gradient-primary shadow-md">
-          <Sparkles className="h-5 w-5 text-white" />
-        </div>
-        <div>
-          <span className="text-lg font-bold text-gray-900">Builder AI</span>
-          <p className="text-xs text-gray-500">For Home Builders</p>
-        </div>
+        <Image src="/images/vitale-logo.png" alt="Vitale" width={140} height={40} className="object-contain h-auto" priority />
       </div>
 
       {/* Quick Actions */}
@@ -423,10 +418,7 @@ export function Sidebar({ user }: SidebarProps) {
       {/* Mobile Header */}
       <div className="lg:hidden fixed top-0 left-0 right-0 z-50 flex h-14 items-center justify-between border-b border-gray-200 bg-white px-4">
         <div className="flex items-center gap-2">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg gradient-primary">
-            <Sparkles className="h-4 w-4 text-white" />
-          </div>
-          <span className="font-bold text-gray-900">Builder AI</span>
+          <Image src="/images/vitale-logo.png" alt="Vitale" width={100} height={30} className="object-contain h-auto" />
         </div>
         <Button
           variant="ghost"
