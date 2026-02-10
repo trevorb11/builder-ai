@@ -143,7 +143,7 @@ const navSections: NavSection[] = [
       },
       {
         name: "Competitor Watch",
-        href: "/dashboard/research/competitors",
+        href: "https://vitale-ci.homebuilder.studio",
         icon: Target,
         description: "Track competitors",
         badge: "AI",
@@ -274,20 +274,21 @@ export function Sidebar({ user }: SidebarProps) {
               {!isCollapsed && (
                 <div className="mt-1 space-y-0.5">
                   {section.items.map((item) => {
-                    const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
+                    const isExternal = item.href.startsWith("http");
+                    const isActive = !isExternal && (pathname === item.href || pathname.startsWith(item.href + "/"));
+                    const linkProps = isExternal
+                      ? { target: "_blank" as const, rel: "noopener noreferrer" }
+                      : {};
 
-                    return (
-                      <Link
-                        key={item.name}
-                        href={item.href}
-                        onClick={() => setIsMobileOpen(false)}
-                        className={cn(
-                          "group flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition-all duration-150",
-                          isActive
-                            ? "bg-blue-50 text-blue-700 font-medium"
-                            : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
-                        )}
-                      >
+                    const className = cn(
+                      "group flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition-all duration-150",
+                      isActive
+                        ? "bg-blue-50 text-blue-700 font-medium"
+                        : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                    );
+
+                    const content = (
+                      <>
                         <item.icon
                           className={cn(
                             "h-5 w-5 flex-shrink-0 transition-colors",
@@ -304,6 +305,31 @@ export function Sidebar({ user }: SidebarProps) {
                             )}
                           </div>
                         </div>
+                      </>
+                    );
+
+                    if (isExternal) {
+                      return (
+                        <a
+                          key={item.name}
+                          href={item.href}
+                          onClick={() => setIsMobileOpen(false)}
+                          className={className}
+                          {...linkProps}
+                        >
+                          {content}
+                        </a>
+                      );
+                    }
+
+                    return (
+                      <Link
+                        key={item.name}
+                        href={item.href}
+                        onClick={() => setIsMobileOpen(false)}
+                        className={className}
+                      >
+                        {content}
                       </Link>
                     );
                   })}
