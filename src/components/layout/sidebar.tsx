@@ -12,23 +12,19 @@ import {
   GraduationCap,
   Link2,
   Users,
-  Home,
   Building2,
   LayoutGrid,
   Settings,
   ChevronDown,
   LogOut,
-  Sparkles,
   Globe,
   Lightbulb,
-  BarChart3,
   HelpCircle,
   ChevronRight,
   ClipboardCheck,
   Menu,
   X,
   Plus,
-  UserPlus,
   Package,
   Bot,
   BookOpen,
@@ -203,12 +199,14 @@ export function Sidebar({ user }: SidebarProps) {
     setCollapsedSections(newCollapsed);
   };
 
-  const SidebarContent = () => (
+  const SidebarContent = ({ showLogo = true }: { showLogo?: boolean }) => (
     <>
-      {/* Logo */}
-      <div className="flex h-16 items-center gap-3 border-b border-gray-200 px-6">
-        <Image src="/images/vitale-logo.png" alt="Vitale" width={140} height={40} className="object-contain h-auto" priority />
-      </div>
+      {/* Logo - hidden on mobile since the mobile header already shows it */}
+      {showLogo && (
+        <div className="flex h-16 items-center gap-3 border-b border-gray-200 px-6">
+          <Image src="/images/vitale-logo.png" alt="Vitale" width={140} height={40} className="object-contain h-auto" priority />
+        </div>
+      )}
 
       {/* Quick Actions */}
       <div className="px-4 py-3 border-b border-gray-100">
@@ -446,7 +444,7 @@ export function Sidebar({ user }: SidebarProps) {
         )}
       >
         <div className="flex h-full flex-col overflow-hidden">
-          <SidebarContent />
+          <SidebarContent showLogo={false} />
         </div>
       </div>
 

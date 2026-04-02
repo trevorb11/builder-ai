@@ -67,7 +67,7 @@
   --font-mono: var(--font-mono);
 }
 
-/* Dark mode - optional for future */
+/* Dark mode - disabled until components support theme-aware classes
 @media (prefers-color-scheme: dark) {
   :root {
     --background: #0f172a;
@@ -80,6 +80,7 @@
     --input: #334155;
   }
 }
+*/
 
 /* Base Styles */
 * {

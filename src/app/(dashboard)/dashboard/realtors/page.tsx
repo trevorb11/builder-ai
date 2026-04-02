@@ -47,7 +47,7 @@ export default async function RealtorsPage() {
 
   if (!organizationId) {
     return (
-      <div className="p-8">
+      <div className="p-4 sm:p-6 lg:p-8">
         <Card>
           <CardContent className="p-6">
             <p className="text-gray-500">
@@ -66,15 +66,15 @@ export default async function RealtorsPage() {
   const activeRealtors = realtors.filter((r) => r.isActive);
 
   return (
-    <div className="p-8">
-      <div className="mb-8">
-        <div className="flex items-center gap-3">
-          <div className="rounded-lg bg-indigo-500 p-2">
-            <Users className="h-6 w-6 text-white" />
+    <div className="p-4 sm:p-6 lg:p-8">
+      <div className="mb-6 sm:mb-8">
+        <div className="flex items-start sm:items-center gap-3">
+          <div className="flex-shrink-0 rounded-lg bg-indigo-500 p-2">
+            <Users className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
           </div>
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">Realtor Portal</h1>
-            <p className="text-gray-600">
+          <div className="min-w-0">
+            <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Realtor Portal</h1>
+            <p className="text-sm sm:text-base text-gray-600">
               Manage your agent resources and portal access
             </p>
           </div>

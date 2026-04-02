@@ -60,7 +60,7 @@ export default async function CompetitorResearchPage() {
       </div>
 
       {/* Content */}
-      <div className="p-8">
+      <div className="p-4 sm:p-6 lg:p-8">
         <div className="grid gap-8 lg:grid-cols-3">
           {/* Research Form - Takes 1 column */}
           <div className="lg:col-span-1">

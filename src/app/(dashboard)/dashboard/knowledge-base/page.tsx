@@ -62,7 +62,7 @@ export default async function KnowledgeBasePage() {
         </div>
       </div>
 
-      <div className="p-8">
+      <div className="p-4 sm:p-6 lg:p-8">
         <KnowledgeBaseManager entries={data?.entries || []} />
       </div>
     </div>
