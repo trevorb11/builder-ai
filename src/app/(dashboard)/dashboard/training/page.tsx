@@ -74,15 +74,15 @@ export default async function TrainingPage() {
     await getTrainingData(userId, organizationId);
 
   return (
-    <div className="p-8">
-      <div className="mb-8">
-        <div className="flex items-center gap-3">
-          <div className="rounded-lg bg-pink-500 p-2">
-            <GraduationCap className="h-6 w-6 text-white" />
+    <div className="p-4 sm:p-6 lg:p-8">
+      <div className="mb-6 sm:mb-8">
+        <div className="flex items-start sm:items-center gap-3">
+          <div className="rounded-lg bg-pink-500 p-2 flex-shrink-0">
+            <GraduationCap className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
           </div>
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">Sales Trainer AI</h1>
-            <p className="text-gray-600">
+          <div className="min-w-0">
+            <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Sales Trainer AI</h1>
+            <p className="text-sm sm:text-base text-gray-600">
               Practice objection handling with AI-powered roleplay
             </p>
           </div>
@@ -90,7 +90,7 @@ export default async function TrainingPage() {
       </div>
 
       {/* Stats */}
-      <div className="mb-8 grid gap-4 md:grid-cols-4">
+      <div className="mb-6 sm:mb-8 grid gap-3 sm:gap-4 grid-cols-2 md:grid-cols-4">
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-gray-500">

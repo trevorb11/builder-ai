@@ -57,7 +57,7 @@ export default async function SEOPage() {
 
   if (!organizationId) {
     return (
-      <div className="p-8">
+      <div className="p-4 sm:p-6 lg:p-8">
         <Card>
           <CardContent className="p-6">
             <p className="text-gray-500">
@@ -77,25 +77,25 @@ export default async function SEOPage() {
   const activeFaqs = faqs.filter((f) => f.isActive).length;
 
   return (
-    <div className="p-8">
-      <div className="mb-8">
-        <div className="flex items-center gap-3">
-          <div className="rounded-lg bg-green-500 p-2">
-            <Search className="h-6 w-6 text-white" />
+    <div className="p-4 sm:p-6 lg:p-8">
+      <div className="mb-6 sm:mb-8">
+        <div className="flex items-start sm:items-center gap-3">
+          <div className="flex-shrink-0 rounded-lg bg-green-500 p-2">
+            <Search className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
           </div>
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">
-              AI Search Optimization
+          <div className="min-w-0">
+            <h1 className="text-xl sm:text-2xl font-bold text-gray-900">
+              SEO & AI Discoverability
             </h1>
-            <p className="text-gray-600">
-              Optimize your content for AI tools like ChatGPT, Gemini, and Perplexity
+            <p className="text-sm sm:text-base text-gray-600">
+              Get found on Google and AI tools like ChatGPT, Gemini, and Perplexity
             </p>
           </div>
         </div>
       </div>
 
       {/* Stats */}
-      <div className="mb-8 grid gap-4 md:grid-cols-4">
+      <div className="mb-6 sm:mb-8 grid gap-3 sm:gap-4 grid-cols-2 md:grid-cols-4">
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-gray-500">
@@ -147,32 +147,56 @@ export default async function SEOPage() {
       </div>
 
       {/* Main Content */}
-      <Tabs defaultValue="faqs" className="space-y-6">
-        <TabsList>
-          <TabsTrigger value="faqs" className="gap-2">
-            <HelpCircle className="h-4 w-4" />
-            FAQ Management
+      <Tabs defaultValue="monitor" className="space-y-4 sm:space-y-6">
+        <TabsList className="w-full sm:w-auto h-auto gap-1 p-1">
+          <TabsTrigger value="monitor" className="gap-1.5 sm:gap-2 text-xs sm:text-sm flex-1 sm:flex-initial">
+            <Eye className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+            <span className="hidden sm:inline">AI Monitoring</span>
+            <span className="sm:hidden">Monitor</span>
           </TabsTrigger>
-          <TabsTrigger value="generator" className="gap-2">
-            <Search className="h-4 w-4" />
-            AI FAQ Generator
+          <TabsTrigger value="faqs" className="gap-1.5 sm:gap-2 text-xs sm:text-sm flex-1 sm:flex-initial">
+            <HelpCircle className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+            <span className="hidden sm:inline">FAQ Library</span>
+            <span className="sm:hidden">FAQs</span>
+            {totalFaqs > 0 && (
+              <Badge variant="secondary" className="text-[10px] h-5 px-1.5">{totalFaqs}</Badge>
+            )}
           </TabsTrigger>
-          <TabsTrigger value="schema" className="gap-2">
-            <Code className="h-4 w-4" />
-            Schema Markup
+          <TabsTrigger value="generator" className="gap-1.5 sm:gap-2 text-xs sm:text-sm flex-1 sm:flex-initial">
+            <Search className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+            <span className="hidden sm:inline">Generate FAQs</span>
+            <span className="sm:hidden">Generate</span>
           </TabsTrigger>
-          <TabsTrigger value="monitor" className="gap-2">
-            <Eye className="h-4 w-4" />
-            AI Search Monitor
+          <TabsTrigger value="schema" className="gap-1.5 sm:gap-2 text-xs sm:text-sm flex-1 sm:flex-initial">
+            <Code className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+            <span className="hidden sm:inline">Schema Markup</span>
+            <span className="sm:hidden">Schema</span>
           </TabsTrigger>
         </TabsList>
+
+        <TabsContent value="monitor">
+          <Card>
+            <CardHeader>
+              <CardTitle>AI Search Monitoring</CardTitle>
+              <CardDescription>
+                Track how ChatGPT, Gemini, and Perplexity mention your builder in their responses
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <AISearchMonitor
+                results={aiMonitor}
+                organizationId={organizationId}
+              />
+            </CardContent>
+          </Card>
+        </TabsContent>
 
         <TabsContent value="faqs">
           <Card>
             <CardHeader>
               <CardTitle>FAQ Library</CardTitle>
               <CardDescription>
-                Manage your FAQs for AI search optimization
+                FAQs help both Google and AI tools understand your business. Q&A format content is more likely to be cited by AI search.
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -189,7 +213,7 @@ export default async function SEOPage() {
             <CardHeader>
               <CardTitle>Generate FAQs with AI</CardTitle>
               <CardDescription>
-                Automatically generate comprehensive FAQs based on your builder data
+                Auto-generate FAQs from your community and floorplan data. Q&A content improves both traditional SEO and AI discoverability.
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -204,32 +228,15 @@ export default async function SEOPage() {
         <TabsContent value="schema">
           <Card>
             <CardHeader>
-              <CardTitle>Schema Markup Generator</CardTitle>
+              <CardTitle>Schema Markup</CardTitle>
               <CardDescription>
-                Generate structured data for better AI and search engine understanding
+                Structured data helps Google and AI tools understand your content. Add this to your website for better visibility.
               </CardDescription>
             </CardHeader>
             <CardContent>
               <SchemaGenerator
                 organization={organization}
                 faqs={faqs}
-                organizationId={organizationId}
-              />
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="monitor">
-          <Card>
-            <CardHeader>
-              <CardTitle>AI Search Monitoring</CardTitle>
-              <CardDescription>
-                Track what AI tools say about your builder in their responses
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <AISearchMonitor
-                results={aiMonitor}
                 organizationId={organizationId}
               />
             </CardContent>

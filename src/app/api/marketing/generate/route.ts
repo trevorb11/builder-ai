@@ -47,6 +47,8 @@ export async function POST(request: NextRequest) {
       communityId,
       floorplanId,
       additionalContext,
+      tone,
+      variationCount,
     } = body;
 
     if (session.user.organizationId !== organizationId) {
@@ -98,28 +100,54 @@ export async function POST(request: NextRequest) {
       ? `\n\nAdditional requirements: ${additionalContext}`
       : "";
 
+    const tonePrompts: Record<string, string> = {
+      professional: "Use a professional, polished tone.",
+      friendly: "Use a warm, friendly, and approachable tone.",
+      enthusiastic: "Use an energetic, enthusiastic, and exciting tone.",
+      informative: "Use an educational, informative, and helpful tone.",
+      luxury: "Use an elegant, sophisticated, and premium tone.",
+    };
+    const toneInstruction = tone ? `\nTone: ${tonePrompts[tone] || tonePrompts.professional}` : "";
+
     const systemPrompt = SYSTEM_PROMPTS.marketingAssistant(
       organization.name,
       organization.brandVoice || "",
       context
     );
 
-    const userPrompt = `${basePrompt} ${platformContext}.${userContext}
+    const numVariations = Math.min(Math.max(parseInt(variationCount) || 1, 1), 3);
 
-Please generate the content now. Make it compelling, accurate, and on-brand. Use actual data from the builder information provided.`;
+    const variationInstruction = numVariations > 1
+      ? `\n\nGenerate exactly ${numVariations} different variations of this content. Separate each variation with "---VARIATION---" on its own line. Each variation should take a different angle or approach while staying on-brand.`
+      : "";
 
-    
+    const userPrompt = `${basePrompt} ${platformContext}.${toneInstruction}${userContext}${variationInstruction}
+
+Please generate the content now. Make it compelling, accurate, and on-brand. Use actual data from the builder information provided. Do NOT include labels like "Variation 1:" — just output the content directly.`;
+
     const completion = await openai.chat.completions.create({
-      model: "gpt-4o", 
+      model: "gpt-4o",
       messages: [
         { role: "system", content: systemPrompt },
         { role: "user", content: userPrompt },
       ],
-      temperature: 0.8,
-      max_completion_tokens: 1500,
+      temperature: 0.85,
+      max_completion_tokens: numVariations > 1 ? 3000 : 1500,
     });
 
     const generatedContent = completion.choices[0]?.message?.content || "";
+
+    if (numVariations > 1) {
+      const variations = generatedContent
+        .split(/---VARIATION---/i)
+        .map((v: string) => v.trim())
+        .filter((v: string) => v.length > 0);
+
+      return NextResponse.json({
+        content: variations[0] || generatedContent,
+        variations: variations.length > 1 ? variations : [generatedContent],
+      });
+    }
 
     return NextResponse.json({ content: generatedContent });
   } catch (error) {

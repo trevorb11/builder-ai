@@ -3,11 +3,8 @@ import { Button } from "@/components/ui/button";
 import {
   MessageSquare,
   Mail,
-  Phone,
   BookOpen,
-  Video,
   HelpCircle,
-  ExternalLink,
   Sparkles,
 } from "lucide-react";
 import Link from "next/link";
@@ -56,16 +53,16 @@ export default function HelpPage() {
   return (
     <div className="min-h-screen bg-gray-50/50">
       <div className="border-b border-gray-200 bg-white">
-        <div className="px-8 py-6">
-          <h1 className="text-2xl font-bold text-gray-900">Help & Support</h1>
-          <p className="mt-1 text-gray-500">
+        <div className="px-4 sm:px-6 lg:px-8 py-4 sm:py-6">
+          <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Help & Support</h1>
+          <p className="mt-1 text-sm sm:text-base text-gray-500">
             Get help with Builder AI features and find answers to common questions
           </p>
         </div>
       </div>
 
-      <div className="p-8 space-y-8">
-        <div className="grid gap-6 md:grid-cols-3">
+      <div className="p-4 sm:p-6 lg:p-8 space-y-6 sm:space-y-8">
+        <div className="grid gap-4 sm:gap-6 md:grid-cols-3">
           {helpTopics.map((topic) => (
             <Link key={topic.title} href={topic.href}>
               <Card className="h-full hover:shadow-md transition-shadow cursor-pointer">
@@ -109,23 +106,23 @@ export default function HelpPage() {
             <CardTitle>Contact Support</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid gap-4 md:grid-cols-2">
+            <div className="grid gap-4 sm:grid-cols-2">
               <div className="flex items-center gap-4 p-4 rounded-lg bg-gray-50">
-                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-100">
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-100 flex-shrink-0">
                   <Mail className="h-5 w-5 text-blue-600" />
                 </div>
                 <div>
                   <p className="font-medium text-gray-900">Email Support</p>
-                  <p className="text-sm text-gray-500">support@builderai.com</p>
+                  <p className="text-sm text-gray-500">support@vitale.io</p>
                 </div>
               </div>
               <div className="flex items-center gap-4 p-4 rounded-lg bg-gray-50">
-                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-green-100">
-                  <Phone className="h-5 w-5 text-green-600" />
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-green-100 flex-shrink-0">
+                  <MessageSquare className="h-5 w-5 text-green-600" />
                 </div>
                 <div>
-                  <p className="font-medium text-gray-900">Phone Support</p>
-                  <p className="text-sm text-gray-500">(727) 555-1234</p>
+                  <p className="font-medium text-gray-900">Live Chat</p>
+                  <p className="text-sm text-gray-500">Available Mon-Fri, 9am-5pm ET</p>
                 </div>
               </div>
             </div>

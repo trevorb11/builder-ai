@@ -12,8 +12,6 @@ import {
   GraduationCap,
   Link2,
   Users,
-  TrendingUp,
-  Home,
   Building2,
   ArrowRight,
   Globe,
@@ -106,7 +104,7 @@ const researchTools = [
   {
     name: "Competitor Intel",
     description: "Deep competitor analysis",
-    href: "/dashboard/research/competitors",
+    href: "/dashboard/competitors",
     icon: Target,
     gradient: "from-amber-400 to-amber-600",
     shadow: "shadow-amber-500/20",
@@ -157,13 +155,6 @@ const aiTools = [
     icon: Link2,
     color: "bg-cyan-500",
   },
-  {
-    name: "Realtor Portal",
-    description: "Manage agent resources",
-    href: "/dashboard/realtors",
-    icon: Users,
-    color: "bg-indigo-500",
-  },
 ];
 
 export default async function DashboardPage() {
@@ -211,11 +202,11 @@ export default async function DashboardPage() {
         {/* Onboarding Prompt for new users */}
         {stats && (stats.communities === 0 || stats.leads === 0) && (
           <Card className="border-blue-200 bg-gradient-to-r from-blue-50 to-purple-50">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
+            <CardContent className="p-4 sm:p-6">
+              <div className="flex flex-col sm:flex-row sm:items-center gap-4 sm:justify-between">
                 <div className="flex items-center gap-4">
-                  <div className="h-12 w-12 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 flex items-center justify-center">
-                    <Sparkles className="h-6 w-6 text-white" />
+                  <div className="h-10 w-10 sm:h-12 sm:w-12 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 flex items-center justify-center flex-shrink-0">
+                    <Sparkles className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
                   </div>
                   <div>
                     <h3 className="font-semibold text-gray-900">Complete Your Setup</h3>
@@ -224,8 +215,8 @@ export default async function DashboardPage() {
                     </p>
                   </div>
                 </div>
-                <Link href="/dashboard/onboarding">
-                  <Button className="gap-2">
+                <Link href="/dashboard/onboarding" className="self-start sm:self-center flex-shrink-0">
+                  <Button className="gap-2 w-full sm:w-auto">
                     View Checklist
                     <ArrowRight className="h-4 w-4" />
                   </Button>
@@ -242,14 +233,12 @@ export default async function DashboardPage() {
             value={stats?.communities || 0}
             description="Active communities"
             icon={Building2}
-            trend="+2 this month"
           />
           <StatCard
             title="Total Leads"
             value={stats?.leads || 0}
             description="From AI Assistant"
             icon={Users}
-            trend="+12% vs last month"
           />
           <StatCard
             title="Conversations"
@@ -464,13 +453,11 @@ function StatCard({
   value,
   description,
   icon: Icon,
-  trend,
 }: {
   title: string;
   value: number;
   description: string;
   icon: React.ElementType;
-  trend?: string;
 }) {
   return (
     <Card>
@@ -480,12 +467,6 @@ function StatCard({
             <p className="text-xs sm:text-sm font-medium text-gray-500 truncate">{title}</p>
             <p className="text-2xl sm:text-3xl font-bold text-gray-900 mt-1">{value}</p>
             <p className="text-xs text-gray-500 mt-1 truncate hidden sm:block">{description}</p>
-            {trend && (
-              <p className="text-xs text-green-600 mt-2 items-center gap-1 hidden sm:flex">
-                <TrendingUp className="h-3 w-3" />
-                {trend}
-              </p>
-            )}
           </div>
           <div className="h-10 w-10 sm:h-12 sm:w-12 rounded-full bg-gray-100 flex items-center justify-center flex-shrink-0">
             <Icon className="h-5 w-5 sm:h-6 sm:w-6 text-gray-600" />

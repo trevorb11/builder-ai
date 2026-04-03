@@ -245,11 +245,25 @@ export function KnowledgeBaseManager({ entries: initialEntries }: KnowledgeBaseM
 
   return (
     <div className="space-y-6">
+      {/* What KB powers */}
+      <div className="rounded-lg border border-blue-200 bg-blue-50 p-4">
+        <p className="text-sm font-medium text-blue-900">Your knowledge base powers these features:</p>
+        <div className="mt-2 flex flex-wrap gap-2">
+          <Badge className="bg-blue-100 text-blue-700 border-0 text-xs">Website Chatbot</Badge>
+          <Badge className="bg-violet-100 text-violet-700 border-0 text-xs">Marketing Writer</Badge>
+          <Badge className="bg-pink-100 text-pink-700 border-0 text-xs">Sales Coach</Badge>
+          <Badge className="bg-green-100 text-green-700 border-0 text-xs">FAQ Generator</Badge>
+        </div>
+        <p className="mt-2 text-xs text-blue-600">
+          Active entries are included when AI generates responses. Disable entries to exclude them without deleting.
+        </p>
+      </div>
+
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-lg font-semibold text-gray-900">Your Knowledge</h2>
           <p className="text-sm text-gray-500">
-            {entries.length} items in your knowledge base
+            {entries.length} {entries.length === 1 ? "item" : "items"} &middot; {entries.filter(e => e.isActive).length} active &middot; {entries.filter(e => e.isProcessed).length} processed
           </p>
         </div>
 
@@ -395,9 +409,14 @@ export function KnowledgeBaseManager({ entries: initialEntries }: KnowledgeBaseM
                     onChange={(e) => setWebsiteCategory(e.target.value)}
                   />
                 </div>
+                {websiteUrl && !websiteUrl.startsWith("http") && (
+                  <p className="text-xs text-amber-600 bg-amber-50 rounded-md p-2">
+                    URL should start with https:// (e.g., https://example.com)
+                  </p>
+                )}
                 <Button
                   onClick={handleAddWebsite}
-                  disabled={!websiteTitle || !websiteUrl || isAddingWebsite}
+                  disabled={!websiteTitle || !websiteUrl || !websiteUrl.startsWith("http") || isAddingWebsite}
                   className="w-full"
                 >
                   {isAddingWebsite ? (
@@ -558,9 +577,15 @@ function EntryCard({
               {getTypeIcon(entry.type)}
             </Badge>
             {entry.isProcessed ? (
-              <CheckCircle2 className="h-3 w-3 text-green-500" />
+              <Badge className="bg-green-100 text-green-700 border-0 text-[10px] gap-0.5 h-5">
+                <CheckCircle2 className="h-2.5 w-2.5" />
+                Ready
+              </Badge>
             ) : (
-              <AlertCircle className="h-3 w-3 text-amber-500" />
+              <Badge className="bg-amber-100 text-amber-700 border-0 text-[10px] gap-0.5 h-5">
+                <AlertCircle className="h-2.5 w-2.5" />
+                Processing
+              </Badge>
             )}
           </div>
           <p className="mt-1 font-medium text-sm text-gray-900 truncate">{entry.title}</p>

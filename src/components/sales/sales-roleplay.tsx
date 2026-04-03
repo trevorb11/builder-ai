@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
@@ -13,7 +13,20 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Send, Play, Square, Loader2, User, Bot, Lightbulb } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import {
+  Send,
+  Play,
+  Square,
+  Loader2,
+  User,
+  Bot,
+  Lightbulb,
+  Mic,
+  MicOff,
+  Volume2,
+  VolumeX,
+} from "lucide-react";
 
 interface SalesRoleplayProps {
   userId: string;
@@ -41,6 +54,116 @@ const difficulties = [
   { id: "hard", name: "Hard", color: "bg-red-100 text-red-800" },
 ];
 
+function useSpeechRecognition() {
+  const [isListening, setIsListening] = useState(false);
+  const [transcript, setTranscript] = useState("");
+  const [isSupported, setIsSupported] = useState(false);
+  const recognitionRef = useRef<SpeechRecognition | null>(null);
+
+  useEffect(() => {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    setIsSupported(!!SpeechRecognition);
+    if (SpeechRecognition) {
+      const recognition = new SpeechRecognition();
+      recognition.continuous = true;
+      recognition.interimResults = true;
+      recognition.lang = "en-US";
+
+      recognition.onresult = (event: SpeechRecognitionEvent) => {
+        let finalTranscript = "";
+        let interimTranscript = "";
+        for (let i = event.resultIndex; i < event.results.length; i++) {
+          const result = event.results[i];
+          if (result.isFinal) {
+            finalTranscript += result[0].transcript;
+          } else {
+            interimTranscript += result[0].transcript;
+          }
+        }
+        setTranscript((prev) => prev + finalTranscript + interimTranscript);
+      };
+
+      recognition.onerror = () => {
+        setIsListening(false);
+      };
+
+      recognition.onend = () => {
+        setIsListening(false);
+      };
+
+      recognitionRef.current = recognition;
+    }
+  }, []);
+
+  const startListening = useCallback(() => {
+    if (recognitionRef.current && !isListening) {
+      setTranscript("");
+      try {
+        recognitionRef.current.start();
+        setIsListening(true);
+      } catch {
+        // Already started
+      }
+    }
+  }, [isListening]);
+
+  const stopListening = useCallback(() => {
+    if (recognitionRef.current && isListening) {
+      recognitionRef.current.stop();
+      setIsListening(false);
+    }
+  }, [isListening]);
+
+  const resetTranscript = useCallback(() => {
+    setTranscript("");
+  }, []);
+
+  return { isListening, transcript, isSupported, startListening, stopListening, resetTranscript };
+}
+
+function useSpeechSynthesis() {
+  const [isSpeaking, setIsSpeaking] = useState(false);
+  const [isSupported, setIsSupported] = useState(false);
+
+  useEffect(() => {
+    setIsSupported(typeof window !== "undefined" && "speechSynthesis" in window);
+  }, []);
+
+  const speak = useCallback((text: string) => {
+    if (!isSupported) return;
+    window.speechSynthesis.cancel();
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.rate = 1.0;
+    utterance.pitch = 1.0;
+
+    // Try to pick a natural-sounding voice
+    const voices = window.speechSynthesis.getVoices();
+    const preferred = voices.find(
+      (v) => v.lang.startsWith("en") && v.name.includes("Natural")
+    ) || voices.find(
+      (v) => v.lang.startsWith("en-US") && !v.name.includes("Google")
+    ) || voices.find(
+      (v) => v.lang.startsWith("en")
+    );
+    if (preferred) utterance.voice = preferred;
+
+    utterance.onstart = () => setIsSpeaking(true);
+    utterance.onend = () => setIsSpeaking(false);
+    utterance.onerror = () => setIsSpeaking(false);
+
+    window.speechSynthesis.speak(utterance);
+  }, [isSupported]);
+
+  const stop = useCallback(() => {
+    if (isSupported) {
+      window.speechSynthesis.cancel();
+      setIsSpeaking(false);
+    }
+  }, [isSupported]);
+
+  return { isSpeaking, isSupported, speak, stop };
+}
+
 export function SalesRoleplay({
   userId,
   organizationId,
@@ -53,13 +176,50 @@ export function SalesRoleplay({
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [voiceMode, setVoiceMode] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
+
+  const {
+    isListening,
+    transcript,
+    isSupported: sttSupported,
+    startListening,
+    stopListening,
+    resetTranscript,
+  } = useSpeechRecognition();
+
+  const {
+    isSpeaking,
+    isSupported: ttsSupported,
+    speak,
+    stop: stopSpeaking,
+  } = useSpeechSynthesis();
+
+  const voiceSupported = sttSupported && ttsSupported;
+
+  // Sync transcript to input when in voice mode
+  useEffect(() => {
+    if (voiceMode && transcript) {
+      setInput(transcript);
+    }
+  }, [voiceMode, transcript]);
 
   useEffect(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
   }, [messages]);
+
+  // Auto-speak buyer messages in voice mode
+  const lastMessageRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (!voiceMode || !ttsSupported) return;
+    const lastMsg = messages[messages.length - 1];
+    if (lastMsg && lastMsg.role === "buyer" && lastMsg.id !== lastMessageRef.current) {
+      lastMessageRef.current = lastMsg.id;
+      speak(lastMsg.content);
+    }
+  }, [messages, voiceMode, ttsSupported, speak]);
 
   async function startSession() {
     if (!scenario) return;
@@ -81,14 +241,17 @@ export function SalesRoleplay({
       if (response.ok) {
         const data = await response.json();
         setSessionId(data.sessionId);
-        setMessages([
-          {
-            id: "1",
-            role: "buyer",
-            content: data.initialMessage,
-          },
-        ]);
+        const initialMsg: Message = {
+          id: "1",
+          role: "buyer",
+          content: data.initialMessage,
+        };
+        setMessages([initialMsg]);
         setIsActive(true);
+
+        if (voiceMode && ttsSupported) {
+          speak(data.initialMessage);
+        }
       }
     } catch (error) {
       console.error("Error starting session:", error);
@@ -98,12 +261,19 @@ export function SalesRoleplay({
   }
 
   async function sendMessage() {
-    if (!input.trim() || !sessionId || isLoading) return;
+    const messageText = input.trim();
+    if (!messageText || !sessionId || isLoading) return;
+
+    // Stop listening if we were recording
+    if (isListening) {
+      stopListening();
+    }
+    resetTranscript();
 
     const userMessage: Message = {
       id: Date.now().toString(),
       role: "agent",
-      content: input.trim(),
+      content: messageText,
     };
 
     setMessages((prev) => [...prev, userMessage]);
@@ -116,14 +286,13 @@ export function SalesRoleplay({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           sessionId,
-          message: input.trim(),
+          message: messageText,
         }),
       });
 
       if (response.ok) {
         const data = await response.json();
 
-        // Add buyer response
         setMessages((prev) => [
           ...prev,
           {
@@ -133,7 +302,6 @@ export function SalesRoleplay({
           },
         ]);
 
-        // Add coach feedback if provided
         if (data.coachFeedback) {
           setMessages((prev) => [
             ...prev,
@@ -156,6 +324,8 @@ export function SalesRoleplay({
     if (!sessionId) return;
 
     setIsLoading(true);
+    if (isListening) stopListening();
+    if (isSpeaking) stopSpeaking();
 
     try {
       const response = await fetch("/api/sales-training/end", {
@@ -180,6 +350,20 @@ export function SalesRoleplay({
       console.error("Error ending session:", error);
     } finally {
       setIsLoading(false);
+    }
+  }
+
+  function handleVoiceToggle() {
+    if (isListening) {
+      stopListening();
+      // Send the accumulated transcript
+      if (input.trim()) {
+        sendMessage();
+      }
+    } else {
+      resetTranscript();
+      setInput("");
+      startListening();
     }
   }
 
@@ -226,6 +410,27 @@ export function SalesRoleplay({
           </div>
         </div>
 
+        {/* Voice Mode Toggle */}
+        {voiceSupported && (
+          <div className="flex items-center justify-between rounded-lg border border-purple-200 bg-purple-50 p-4">
+            <div className="flex items-center gap-3">
+              <div className="h-9 w-9 rounded-full bg-purple-100 flex items-center justify-center">
+                <Mic className="h-4 w-4 text-purple-600" />
+              </div>
+              <div>
+                <p className="text-sm font-medium text-purple-900">Voice Mode</p>
+                <p className="text-xs text-purple-600">
+                  Speak your responses and hear the buyer talk back
+                </p>
+              </div>
+            </div>
+            <Switch
+              checked={voiceMode}
+              onCheckedChange={setVoiceMode}
+            />
+          </div>
+        )}
+
         <div className="rounded-lg bg-blue-50 p-4">
           <h4 className="font-medium text-blue-900">How It Works</h4>
           <ul className="mt-2 space-y-2 text-sm text-blue-800">
@@ -235,11 +440,15 @@ export function SalesRoleplay({
             </li>
             <li className="flex items-start gap-2">
               <span className="font-bold">2.</span>
-              Respond as you would in a real sales conversation
+              {voiceMode
+                ? "Press the microphone button and speak your response naturally"
+                : "Respond as you would in a real sales conversation"}
             </li>
             <li className="flex items-start gap-2">
               <span className="font-bold">3.</span>
-              Get real-time coaching feedback on your responses
+              {voiceMode
+                ? "The buyer will speak their response back to you"
+                : "Get real-time coaching feedback on your responses"}
             </li>
             <li className="flex items-start gap-2">
               <span className="font-bold">4.</span>
@@ -263,6 +472,7 @@ export function SalesRoleplay({
             <>
               <Play className="mr-2 h-4 w-4" />
               Start Training Session
+              {voiceMode && " (Voice)"}
             </>
           )}
         </Button>
@@ -283,7 +493,7 @@ export function SalesRoleplay({
     <div className="flex h-[500px] flex-col rounded-lg border">
       {/* Header */}
       <div className="flex items-center justify-between border-b bg-gray-50 px-4 py-3">
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2">
           <Badge variant="outline">
             {scenarios.find((s) => s.id === scenario)?.name}
           </Badge>
@@ -294,11 +504,37 @@ export function SalesRoleplay({
           >
             {difficulties.find((d) => d.id === difficulty)?.name}
           </Badge>
+          {voiceMode && (
+            <Badge className="bg-purple-100 text-purple-700 border-0 gap-1">
+              <Mic className="h-3 w-3" />
+              Voice
+            </Badge>
+          )}
         </div>
-        <Button variant="destructive" size="sm" onClick={endSession}>
-          <Square className="mr-2 h-4 w-4" />
-          End Session
-        </Button>
+        <div className="flex items-center gap-2">
+          {voiceMode && ttsSupported && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={isSpeaking ? stopSpeaking : () => {
+                const lastBuyer = [...messages].reverse().find(m => m.role === "buyer");
+                if (lastBuyer) speak(lastBuyer.content);
+              }}
+              className="h-8 w-8 p-0"
+              title={isSpeaking ? "Stop speaking" : "Replay last response"}
+            >
+              {isSpeaking ? (
+                <VolumeX className="h-4 w-4 text-purple-600" />
+              ) : (
+                <Volume2 className="h-4 w-4 text-gray-500" />
+              )}
+            </Button>
+          )}
+          <Button variant="destructive" size="sm" onClick={endSession}>
+            <Square className="mr-2 h-4 w-4" />
+            End Session
+          </Button>
+        </div>
       </div>
 
       {/* Messages */}
@@ -312,7 +548,7 @@ export function SalesRoleplay({
               }`}
             >
               <div
-                className={`flex h-8 w-8 items-center justify-center rounded-full ${
+                className={`flex h-8 w-8 items-center justify-center rounded-full flex-shrink-0 ${
                   message.role === "agent"
                     ? "bg-blue-500"
                     : message.role === "buyer"
@@ -359,29 +595,83 @@ export function SalesRoleplay({
 
       {/* Input */}
       <div className="border-t bg-white p-4">
-        <form
-          onSubmit={(e) => {
-            e.preventDefault();
-            sendMessage();
-          }}
-          className="flex gap-2"
-        >
-          <Textarea
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            placeholder="Type your response as the sales agent..."
-            className="min-h-[60px] flex-1 resize-none"
-            onKeyDown={(e) => {
-              if (e.key === "Enter" && !e.shiftKey) {
-                e.preventDefault();
-                sendMessage();
-              }
+        {voiceMode ? (
+          <div className="flex items-center gap-3">
+            {/* Voice Input Area */}
+            <div className="flex-1 min-h-[60px] rounded-lg border bg-gray-50 px-4 py-3 flex items-center">
+              {isListening ? (
+                <div className="flex items-center gap-3 w-full">
+                  <div className="flex gap-1 items-center">
+                    <span className="w-1 h-3 bg-purple-500 rounded-full animate-pulse" />
+                    <span className="w-1 h-5 bg-purple-500 rounded-full animate-pulse [animation-delay:150ms]" />
+                    <span className="w-1 h-3 bg-purple-500 rounded-full animate-pulse [animation-delay:300ms]" />
+                  </div>
+                  <p className="text-sm text-gray-700 flex-1">
+                    {input || <span className="text-gray-400">Listening...</span>}
+                  </p>
+                </div>
+              ) : (
+                <p className="text-sm text-gray-400">
+                  {input || "Press the mic button and start speaking..."}
+                </p>
+              )}
+            </div>
+
+            {/* Mic Button */}
+            <Button
+              type="button"
+              onClick={handleVoiceToggle}
+              disabled={isLoading}
+              className={`h-12 w-12 rounded-full p-0 flex-shrink-0 ${
+                isListening
+                  ? "bg-red-500 hover:bg-red-600 animate-pulse"
+                  : "bg-purple-500 hover:bg-purple-600"
+              }`}
+            >
+              {isListening ? (
+                <MicOff className="h-5 w-5 text-white" />
+              ) : (
+                <Mic className="h-5 w-5 text-white" />
+              )}
+            </Button>
+
+            {/* Send (for sending partial transcript manually) */}
+            {input.trim() && !isListening && (
+              <Button
+                type="button"
+                onClick={sendMessage}
+                disabled={isLoading}
+                className="h-12 w-12 rounded-full p-0 flex-shrink-0"
+              >
+                <Send className="h-5 w-5" />
+              </Button>
+            )}
+          </div>
+        ) : (
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              sendMessage();
             }}
-          />
-          <Button type="submit" disabled={isLoading || !input.trim()}>
-            <Send className="h-4 w-4" />
-          </Button>
-        </form>
+            className="flex gap-2"
+          >
+            <Textarea
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              placeholder="Type your response as the sales agent..."
+              className="min-h-[60px] flex-1 resize-none"
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && !e.shiftKey) {
+                  e.preventDefault();
+                  sendMessage();
+                }
+              }}
+            />
+            <Button type="submit" disabled={isLoading || !input.trim()}>
+              <Send className="h-4 w-4" />
+            </Button>
+          </form>
+        )}
       </div>
     </div>
   );

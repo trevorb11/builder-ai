@@ -33,22 +33,22 @@ export default async function SettingsPage() {
   const { organization } = await getSettingsData(organizationId);
 
   return (
-    <div className="p-8">
-      <div className="mb-8">
-        <div className="flex items-center gap-3">
-          <div className="rounded-lg bg-gray-700 p-2">
-            <Settings className="h-6 w-6 text-white" />
+    <div className="p-4 sm:p-6 lg:p-8">
+      <div className="mb-6 sm:mb-8">
+        <div className="flex items-start sm:items-center gap-3">
+          <div className="rounded-lg bg-gray-600 p-2 flex-shrink-0">
+            <Settings className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
           </div>
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">Settings</h1>
-            <p className="text-gray-600">
+          <div className="min-w-0">
+            <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Settings</h1>
+            <p className="text-sm sm:text-base text-gray-600">
               Manage your account and organization settings
             </p>
           </div>
         </div>
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-2">
+      <div className="grid gap-4 sm:gap-6 lg:grid-cols-2">
         <Link href="/dashboard/settings/organization">
           <Card className="hover:shadow-md transition-shadow cursor-pointer">
             <CardHeader>

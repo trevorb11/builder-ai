@@ -49,7 +49,7 @@ export default async function AssistantPage() {
 
   if (!organizationId) {
     return (
-      <div className="p-8">
+      <div className="p-4 sm:p-6 lg:p-8">
         <Card>
           <CardContent className="p-6">
             <p className="text-gray-500">
@@ -64,15 +64,15 @@ export default async function AssistantPage() {
   const { config, conversations, stats } = await getChatbotConfig(organizationId);
 
   return (
-    <div className="p-8">
-      <div className="mb-8">
-        <div className="flex items-center gap-3">
-          <div className="rounded-lg bg-blue-500 p-2">
-            <MessageSquare className="h-6 w-6 text-white" />
+    <div className="p-4 sm:p-6 lg:p-8">
+      <div className="mb-6 sm:mb-8">
+        <div className="flex items-start sm:items-center gap-3">
+          <div className="flex-shrink-0 rounded-lg bg-blue-500 p-2">
+            <MessageSquare className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
           </div>
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">Website AI Assistant</h1>
-            <p className="text-gray-600">
+          <div className="min-w-0">
+            <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Website AI Assistant</h1>
+            <p className="text-sm sm:text-base text-gray-600">
               Configure your AI chatbot to answer buyer questions and capture leads
             </p>
           </div>
