@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Check, Copy } from "lucide-react";
+import { AlertTriangle, Check, Copy, Info } from "lucide-react";
 import type { ChatbotConfig } from "@/generated/prisma/client";
 
 interface EmbedCodeSectionProps {
@@ -14,11 +14,14 @@ interface EmbedCodeSectionProps {
 export function EmbedCodeSection({ organizationId, config }: EmbedCodeSectionProps) {
   const [copied, setCopied] = useState(false);
 
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || (typeof window !== 'undefined' ? window.location.origin : 'https://your-domain.com');
+  const showUrlWarning = appUrl.includes('your-domain.com') || appUrl.includes('localhost');
+
   const embedCode = `<!-- Builder AI Chat Widget -->
 <script>
   (function() {
     var script = document.createElement('script');
-    script.src = '${process.env.NEXT_PUBLIC_APP_URL || 'https://your-domain.com'}/widget.js';
+    script.src = '${process.env.NEXT_PUBLIC_APP_URL || (typeof window !== 'undefined' ? window.location.origin : 'https://your-domain.com')}/widget.js';
     script.async = true;
     script.dataset.organizationId = '${organizationId}';
     script.dataset.primaryColor = '${config?.primaryColor || '#2563eb'}';
@@ -35,6 +38,19 @@ export function EmbedCodeSection({ organizationId, config }: EmbedCodeSectionPro
 
   return (
     <div className="space-y-4">
+      {showUrlWarning && (
+        <div className="flex items-start gap-3 rounded-lg border border-amber-300 bg-amber-50 p-4">
+          <AlertTriangle className="mt-0.5 h-5 w-5 flex-shrink-0 text-amber-600" />
+          <div>
+            <h4 className="font-medium text-amber-900">Domain not configured</h4>
+            <p className="mt-1 text-sm text-amber-800">
+              The embed code is using a placeholder or localhost URL. Before deploying to production,
+              set the <code className="rounded bg-amber-100 px-1">NEXT_PUBLIC_APP_URL</code> environment
+              variable to your production domain.
+            </p>
+          </div>
+        </div>
+      )}
       <div className="relative">
         <Textarea
           value={embedCode}
@@ -78,6 +94,16 @@ export function EmbedCodeSection({ organizationId, config }: EmbedCodeSectionPro
           <li>The widget will use your configured colors and settings</li>
           <li>All conversations are automatically saved and synced to your CRM (if configured)</li>
         </ul>
+      </div>
+
+      <div className="flex items-start gap-3 rounded-lg border border-gray-200 bg-gray-50 p-4">
+        <Info className="mt-0.5 h-5 w-5 flex-shrink-0 text-gray-500" />
+        <div>
+          <h4 className="font-medium text-gray-900">Preview Widget</h4>
+          <p className="mt-1 text-sm text-gray-600">
+            Use the Preview tab above to test your chatbot before deploying.
+          </p>
+        </div>
       </div>
     </div>
   );

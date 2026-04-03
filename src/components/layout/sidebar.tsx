@@ -145,10 +145,10 @@ const navSections: NavSection[] = [
         color: "text-purple-500",
       },
       {
-        name: "SEO Tools",
+        name: "SEO & AI Search",
         href: "/dashboard/seo",
         icon: Search,
-        description: "Get found on Google",
+        description: "Google & AI discoverability",
         color: "text-emerald-500",
       },
     ],

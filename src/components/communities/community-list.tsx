@@ -55,7 +55,8 @@ interface CommunityListProps {
   communities: Community[];
 }
 
-export function CommunityList({ communities }: CommunityListProps) {
+export function CommunityList({ communities: initialCommunities }: CommunityListProps) {
+  const [communities, setCommunities] = useState<Community[]>(initialCommunities);
   const [editCommunity, setEditCommunity] = useState<Community | null>(null);
   const [deleteCommunity, setDeleteCommunity] = useState<Community | null>(null);
   const [isEditing, setIsEditing] = useState(false);
@@ -88,8 +89,11 @@ export function CommunityList({ communities }: CommunityListProps) {
       });
 
       if (response.ok) {
+        const updatedCommunity = await response.json();
+        setCommunities((prev) =>
+          prev.map((c) => (c.id === editCommunity.id ? { ...c, ...updatedCommunity } : c))
+        );
         setEditCommunity(null);
-        window.location.reload();
       }
     } catch (error) {
       console.error("Failed to update community:", error);
@@ -118,8 +122,8 @@ export function CommunityList({ communities }: CommunityListProps) {
       });
 
       if (response.ok) {
+        setCommunities((prev) => prev.filter((c) => c.id !== deleteCommunity.id));
         setDeleteCommunity(null);
-        window.location.reload();
       }
     } catch (error) {
       console.error("Failed to delete community:", error);
