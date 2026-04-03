@@ -104,7 +104,7 @@ const researchTools = [
   {
     name: "Competitor Intel",
     description: "Deep competitor analysis",
-    href: "/dashboard/research/competitors",
+    href: "/dashboard/competitors",
     icon: Target,
     gradient: "from-amber-400 to-amber-600",
     shadow: "shadow-amber-500/20",
@@ -154,13 +154,6 @@ const aiTools = [
     href: "/dashboard/crm",
     icon: Link2,
     color: "bg-cyan-500",
-  },
-  {
-    name: "Realtor Portal",
-    description: "Manage agent resources",
-    href: "/dashboard/realtors",
-    icon: Users,
-    color: "bg-indigo-500",
   },
 ];
 

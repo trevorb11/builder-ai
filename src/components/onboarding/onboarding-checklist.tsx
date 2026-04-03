@@ -10,7 +10,6 @@ import {
   Globe,
   Target,
   GraduationCap,
-  Users,
   FileEdit,
   Rocket,
   Check,
@@ -137,7 +136,7 @@ const sections: ChecklistSection[] = [
     description: "Configure incentives, commissions, and inventory homes",
     items: [
       { key: "incentivesAdded", label: "Current incentives", description: "Active promotions, closing cost specials, upgrade packages", required: true, link: "/dashboard/communities", linkLabel: "Manage Incentives" },
-      { key: "coopCommission", label: "Co-op commission structure", description: "Realtor commission rates and terms", required: true, link: "/dashboard/realtors", linkLabel: "Configure" },
+      { key: "coopCommission", label: "Co-op commission structure", description: "Realtor commission rates and terms", required: true, link: "/dashboard/settings/organization", linkLabel: "Configure" },
       { key: "preferredLender", label: "Preferred lender info", description: "Lender name and contact details", link: "/dashboard/settings/organization", linkLabel: "Edit" },
       { key: "pricingContacts", label: "Pricing update contacts", description: "Who to contact for pricing changes", required: true, link: "/dashboard/settings/organization", linkLabel: "Edit" },
       { key: "inventoryAdded", label: "Quick move-in inventory", description: "Available inventory homes with pricing and move-in dates", link: "/dashboard/inventory", linkLabel: "Manage Inventory" },
@@ -174,7 +173,7 @@ const sections: ChecklistSection[] = [
     color: "text-red-500",
     description: "Track your competitors and market positioning",
     items: [
-      { key: "competitorsAdded", label: "Competitors added", description: "Names and websites of key competitors", link: "/dashboard/research/competitors", linkLabel: "Add Competitors" },
+      { key: "competitorsAdded", label: "Competitors added", description: "Names and websites of key competitors", link: "/dashboard/competitors", linkLabel: "Add Competitors" },
     ],
   },
   {
@@ -187,18 +186,6 @@ const sections: ChecklistSection[] = [
     items: [
       { key: "salesAgentsAdded", label: "Sales agents registered", description: "Number of agents who will use training", link: "/dashboard/training", linkLabel: "Start Training" },
       { key: "trainingAssets", label: "Training assets uploaded", description: "Call recordings, scripts, objection handling docs", link: "/dashboard/training", linkLabel: "Upload" },
-    ],
-  },
-  {
-    id: "realtor",
-    title: "Realtor Portal",
-    icon: Users,
-    color: "text-indigo-500",
-    description: "Configure the realtor-facing portal and resources",
-    optional: true,
-    items: [
-      { key: "realtorDatabase", label: "Realtor database", description: "List of realtors with contact info", link: "/dashboard/realtors", linkLabel: "Manage Realtors" },
-      { key: "realtorAssets", label: "Realtor assets", description: "Co-op flyers, materials, event info", link: "/dashboard/realtors", linkLabel: "Upload" },
     ],
   },
   {

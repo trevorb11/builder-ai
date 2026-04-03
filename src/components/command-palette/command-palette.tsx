@@ -3,7 +3,6 @@
 import * as React from "react";
 import { useRouter } from "next/navigation";
 import {
-  Command,
   CommandDialog,
   CommandEmpty,
   CommandGroup,
@@ -19,12 +18,10 @@ import {
   Home,
   Package,
   Users,
-  BarChart3,
   MessageSquare,
   FileEdit,
   GraduationCap,
   Globe,
-  Target,
   Lightbulb,
   Search,
   Link2,
@@ -34,6 +31,7 @@ import {
   ClipboardCheck,
   Sparkles,
   LogOut,
+  BookOpen,
 } from "lucide-react";
 
 interface CommandPaletteProps {
@@ -56,31 +54,29 @@ const navigationItems = [
       { name: "Floorplans", href: "/dashboard/floorplans", icon: Home, keywords: ["plans", "layouts", "designs"] },
       { name: "Inventory", href: "/dashboard/inventory", icon: Package, keywords: ["homes", "quick move-in", "spec", "available"] },
       { name: "Leads", href: "/dashboard/leads", icon: Users, keywords: ["prospects", "customers", "contacts"] },
-      { name: "Analytics", href: "/dashboard/analytics", icon: BarChart3, keywords: ["metrics", "reports", "data"] },
     ],
   },
   {
     group: "AI Assistants",
     items: [
+      { name: "Knowledge Base", href: "/dashboard/knowledge-base", icon: BookOpen, keywords: ["training", "data", "ai", "documents"] },
       { name: "Website Chatbot", href: "/dashboard/assistant", icon: MessageSquare, keywords: ["chat", "ai", "bot", "visitor"] },
       { name: "Marketing Writer", href: "/dashboard/marketing", icon: FileEdit, keywords: ["content", "copy", "blog", "social"] },
-      { name: "Sales Coach", href: "/dashboard/training", icon: GraduationCap, keywords: ["training", "practice", "role play"] },
+      { name: "Sales Coach", href: "/dashboard/training", icon: GraduationCap, keywords: ["training", "practice", "role play", "voice"] },
     ],
   },
   {
     group: "Research & SEO",
     items: [
-      { name: "Online Presence", href: "/dashboard/research/footprint", icon: Globe, keywords: ["footprint", "reputation", "reviews"] },
-      { name: "Competitor Watch", href: "/dashboard/research/competitors", icon: Target, keywords: ["competition", "market"] },
+      { name: "Online Presence", href: "/dashboard/research/footprint", icon: Globe, keywords: ["footprint", "reputation", "reviews", "ai readiness"] },
       { name: "Content Ideas", href: "/dashboard/research/content", icon: Lightbulb, keywords: ["topics", "blog ideas", "inspiration"] },
-      { name: "SEO Tools", href: "/dashboard/seo", icon: Search, keywords: ["google", "search", "keywords", "ranking"] },
+      { name: "SEO Tools", href: "/dashboard/seo", icon: Search, keywords: ["google", "search", "keywords", "ranking", "faq", "schema"] },
     ],
   },
   {
     group: "Connections",
     items: [
       { name: "CRM Sync", href: "/dashboard/crm", icon: Link2, keywords: ["hubspot", "salesforce", "integration"] },
-      { name: "Realtor Portal", href: "/dashboard/realtors", icon: Users, keywords: ["agents", "brokers", "partners"] },
     ],
   },
   {

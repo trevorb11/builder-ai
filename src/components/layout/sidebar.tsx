@@ -25,7 +25,6 @@ import {
   X,
   Plus,
   Package,
-  Bot,
   BookOpen,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -128,14 +127,6 @@ const navSections: NavSection[] = [
         description: "Your digital footprint",
         badge: "AI",
         color: "text-teal-500",
-      },
-      {
-        name: "AI Readiness",
-        href: "/dashboard/research/ai-readiness",
-        icon: Bot,
-        description: "ChatGPT & AI visibility",
-        badge: "AI",
-        color: "text-purple-500",
       },
       {
         name: "Competitor Watch",
